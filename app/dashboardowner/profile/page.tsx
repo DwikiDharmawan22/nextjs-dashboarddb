@@ -1,7 +1,10 @@
 'use client';
+
 import Image from 'next/image';
 import { cousine } from '@/app/ui/fonts';
 import { useRouter } from 'next/navigation';
+import { Profile } from '@/app/lib/definitions2';
+import { profileData } from '@/app/lib/data2';
 
 export default function Page() {
   const router = useRouter();
@@ -27,8 +30,8 @@ export default function Page() {
 
         {/* Header section with name and role */}
         <div className="bg-pink-200 p-4 pt-20 rounded-t-lg flex flex-col items-center">
-          <h1 className="text-4xl font-bold text-purple-900">Dwiki Dharmawan</h1>
-          <p className="text-2xl text-purple-900">Pegawai</p>
+          <h1 className="text-4xl font-bold text-purple-900">{profileData.name}</h1>
+          <p className="text-2xl text-purple-900">{profileData.role}</p>
         </div>
 
         {/* Content section */}
@@ -36,26 +39,26 @@ export default function Page() {
           {/* Email */}
           <div className="border-b border-gray-300 pb-2">
             <p className="text-2xl font-semibold text-gray-700">EMAIL</p>
-            <p className="text-xl text-gray-600">cicilia175@gmail.com</p>
+            <p className="text-xl text-gray-600">{profileData.email}</p>
           </div>
 
           {/* Nomor Telepon */}
           <div className="border-b border-gray-300 pb-2">
             <p className="text-2xl font-semibold text-gray-700">NOMOR TELEPON</p>
-            <p className="text-xl text-gray-600">083418461937</p>
+            <p className="text-xl text-gray-600">{profileData.phone}</p>
           </div>
 
           {/* Facebook */}
           <div className="border-b border-gray-300 pb-2">
             <p className="text-2xl font-semibold text-gray-700">FACEBOOK</p>
-            <p className="text-xl text-gray-600">@Ciciliaaa</p>
+            <p className="text-xl text-gray-600">{profileData.facebook}</p>
           </div>
         </div>
       </div>
 
       {/* Back button positioned below the card and aligned left */}
       <div className="w-full max-w-4xl mt-6 flex justify-start">
-        <button 
+        <button
           onClick={handleBack}
           className="bg-white text-xl text-red-700 font-bold py-2 px-8 rounded-full shadow hover:bg-gray-100 transition-colors"
         >

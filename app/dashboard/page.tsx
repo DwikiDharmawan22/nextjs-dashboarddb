@@ -3,9 +3,36 @@
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { creepster, irishGrover } from '@/app/ui/fonts';
+import { products } from '@/app/lib/data2';
+import { ProductPelanggan } from '@/app/lib/definitions2';
 
 export default function HomePage() {
   const router = useRouter();
+
+  const renderProductCard = (product: ProductPelanggan) => (
+    <div
+      key={product.name}
+      className="product-card p-4 rounded-lg text-center hover:shadow-xl transition-shadow"
+      style={{ border: '5px solid #A64D79' }}
+    >
+      <Image
+        src={product.imageSrc}
+        width={product.width}
+        height={product.height}
+        className="mx-auto"
+        alt={product.altText}
+      />
+      <h3 className={`${irishGrover.className} text-[#6A1E55] text-xl font-semibold mb-3`}>
+        {product.name}
+      </h3>
+      <button
+        onClick={() => router.push(product.link)}
+        className={`${creepster.className} rounded-2xl bg-[#6A1E55] text-white w-32 hover:underline flex items-center justify-center text-lg mx-auto`}
+      >
+        SEE MORE
+      </button>
+    </div>
+  );
 
   return (
     <div className="min-h-screen font-creepster">
@@ -48,62 +75,7 @@ export default function HomePage() {
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10 px-4">
-            <div className="product-card p-4 rounded-lg text-center hover:shadow-xl transition-shadow" style={{ border: '5px solid #A64D79' }}>
-              <Image
-                src="/topeng dwiki.png"
-                width={190}
-                height={150}
-                className="mx-auto"
-                alt="Topeng Dwiki"
-              />
-              <h3 className={`${irishGrover.className} text-[#6A1E55] text-xl font-semibold mb-3`}>
-                TOPENG DWIKI
-              </h3>
-              <button
-                onClick={() => router.push('/dashboard/product')}
-                className={`${creepster.className} rounded-2xl bg-[#6A1E55] text-white w-32 hover:underline flex items-center justify-center text-lg mx-auto`}
-              >
-                SEE MORE
-              </button>
-            </div>
-
-            <div className="product-card p-4 rounded-lg text-center hover:shadow-xl transition-shadow" style={{ border: '5px solid #A64D79' }}>
-              <Image
-                src="/topeng jesica.png"
-                width={150}
-                height={150}
-                className="mx-auto"
-                alt="Topeng Jesica"
-              />
-              <h3 className={`${irishGrover.className} text-[#6A1E55] text-xl font-semibold mb-3`}>
-                TOPENG JESICA
-              </h3>
-              <button
-                onClick={() => router.push('/dashboard/product/product2')}
-                className={`${creepster.className} rounded-2xl bg-[#6A1E55] text-white w-32 hover:underline flex items-center justify-center text-lg mx-auto`}
-              >
-                SEE MORE
-              </button>
-            </div>
-
-            <div className="product-card p-4 rounded-lg text-center hover:shadow-xl transition-shadow" style={{ border: '5px solid #A64D79' }}>
-              <Image
-                src="/topeng cicilia.png"
-                width={167}
-                height={150}
-                className="mx-auto"
-                alt="topeng Cicilia"
-              />
-              <h3 className={`${irishGrover.className} text-[#6A1E55] text-xl font-semibold mb-3`}>
-                TOPENG CICILIA
-              </h3>
-              <button
-                onClick={() => router.push('/dashboard/product/product3')}
-                className={`${creepster.className} rounded-2xl bg-[#6A1E55] text-white w-32 hover:underline flex items-center justify-center text-lg mx-auto`}
-              >
-                SEE MORE
-              </button>
-            </div>
+            {products.map((product) => renderProductCard(product))}
           </div>
         </div>
       </section>

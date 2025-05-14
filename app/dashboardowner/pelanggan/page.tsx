@@ -2,27 +2,13 @@
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { cousine, creepster } from '@/app/ui/fonts';
-
-// Definisi tipe untuk customer
-interface Customer {
-  username: string;
-  email: string;
-  phone: string;
-  transactions: string[];
-}
-
-// Definisi tipe untuk form data
-interface FormData {
-  username: string;
-  email: string;
-  phone: string;
-}
+import { Customer, FormData } from '@/app/lib/definitions2';
+import { loadCustomers, saveCustomers } from '@/app/lib/data2';
 
 export default function Page() {
   const router = useRouter();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  // Ubah entriesPerPage menjadi string agar sesuai dengan <select>
   const [entriesPerPage, setEntriesPerPage] = useState<string>('4');
   const [currentPage, setCurrentPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -34,54 +20,10 @@ export default function Page() {
     phone: '',
   });
 
-  // Load customers dari localStorage saat komponen mount
   useEffect(() => {
-    try {
-      const storedCustomers = JSON.parse(localStorage.getItem('customers') || '[]');
-      if (storedCustomers.length === 0) {
-        const defaultCustomers: Customer[] = [
-          {
-            username: 'Century',
-            email: 'cent29@gmail.com',
-            phone: '0836181937',
-            transactions: ['2 Topeng Cicilia', '1 Topeng Hudoq', '10 Topeng Jesica'],
-          },
-          {
-            username: 'Yonoji',
-            email: 'cent29@gmail.com',
-            phone: '0836181937',
-            transactions: ['2 Topeng Cicilia', '10 Topeng Jesica'],
-          },
-          {
-            username: 'Sutami',
-            email: 'cent29@gmail.com',
-            phone: '0836181937',
-            transactions: ['2 Topeng Cicilia', '5 Topeng Hudoq'],
-          },
-          {
-            username: 'Ohena',
-            email: 'cent29@gmail.com',
-            phone: '0836181937',
-            transactions: ['2 Topeng Cicilia', '1 Topeng Hudoq', '19 Topeng Jesica'],
-          },
-        ];
-        localStorage.setItem('customers', JSON.stringify(defaultCustomers));
-        setCustomers(defaultCustomers);
-      } else {
-        // Sanitasi data untuk memastikan transactions adalah array
-        const sanitizedCustomers: Customer[] = storedCustomers.map((customer: Customer) => ({
-          ...customer,
-          transactions: Array.isArray(customer.transactions) ? customer.transactions : [],
-        }));
-        setCustomers(sanitizedCustomers);
-      }
-    } catch (error) {
-      console.error('Error parsing customers from localStorage:', error);
-      setCustomers([]);
-    }
+    setCustomers(loadCustomers());
   }, []);
 
-  // Filter customers berdasarkan search query
   const filteredCustomers = customers.filter(
     (customer) =>
       customer.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -92,21 +34,19 @@ export default function Page() {
       )
   );
 
-  // Hitung pagination
   const totalPages = Math.ceil(filteredCustomers.length / Number(entriesPerPage));
   const paginatedCustomers = filteredCustomers.slice(
     (currentPage - 1) * Number(entriesPerPage),
     currentPage * Number(entriesPerPage)
   );
 
-  // Handlers
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
     setCurrentPage(1);
   };
 
   const handleEntriesChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setEntriesPerPage(e.target.value); // Nilai dari <select> sudah string
+    setEntriesPerPage(e.target.value);
     setCurrentPage(1);
   };
 
@@ -119,7 +59,7 @@ export default function Page() {
   const handleDelete = (username: string) => {
     const updatedCustomers = customers.filter((customer) => customer.username !== username);
     setCustomers(updatedCustomers);
-    localStorage.setItem('customers', JSON.stringify(updatedCustomers));
+    saveCustomers(updatedCustomers);
     if (paginatedCustomers.length === 1 && currentPage > 1) {
       setCurrentPage(currentPage - 1);
     }
@@ -168,7 +108,6 @@ export default function Page() {
       transactions: modalMode === 'edit' && currentCustomer ? currentCustomer.transactions : [],
     };
 
-    // Validasi username unik
     if (
       modalMode === 'add' ||
       (modalMode === 'edit' && formData.username !== currentCustomer?.username)
@@ -192,18 +131,16 @@ export default function Page() {
     }
 
     setCustomers(updatedCustomers);
-    localStorage.setItem('customers', JSON.stringify(updatedCustomers));
+    saveCustomers(updatedCustomers);
     closeModal();
   };
 
   return (
     <div className="min-h-screen text-white p-4" style={{ backgroundColor: '#6A1E55' }}>
-      {/* Header */}
       <h1 className={`text-6xl text-white font-bold flex justify-center items-center ${creepster.className}`}>
         DATA PELANGGAN
       </h1>
 
-      {/* Top controls */}
       <div className="flex justify-between items-center mb-4">
         <div className={`flex items-center gap-2 text-xl ${cousine.className}`}>
           <span>SHOW:</span>
@@ -236,7 +173,6 @@ export default function Page() {
         </div>
       </div>
 
-      {/* Table */}
       <div className={`flex justify-center items-center text-2xl bg-white text-black rounded-lg overflow-hidden ${cousine.className}`}>
         <table className="w-full">
           <thead>
@@ -295,7 +231,6 @@ export default function Page() {
         </table>
       </div>
 
-      {/* Pagination */}
       <div className={`flex flex-col items-center mt-16 ${cousine.className}`}>
         <div className="flex gap-2 mb-2">
           <button
@@ -334,7 +269,6 @@ export default function Page() {
         </span>
       </div>
 
-      {/* Back button */}
       <button
         type="button"
         className={`mt-4 bg-white text-red-700 font-bold px-4 py-2 rounded ${cousine.className}`}
@@ -343,7 +277,6 @@ export default function Page() {
         Back
       </button>
 
-      {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className={`bg-[#FFE1F9] p-6 rounded-lg w-1/3 ${cousine.className}`}>

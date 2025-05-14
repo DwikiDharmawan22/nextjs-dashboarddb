@@ -2,39 +2,12 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { cousine } from '@/app/ui/fonts';
-
-// Define interfaces for type safety
-interface Product {
-  name: string;
-  quantity: number;
-  price: number;
-  subtotal: number;
-}
-
-interface FormData {
-  date: string;
-  cashier: string;
-  customer: string;
-  products: Product[];
-  discount: number;
-  totalPayment: number;
-  paymentAmount: number;
-  change: number;
-}
-
-interface Transaction {
-  id: string;
-  date: string;
-  totalPrice: string;
-  username: string;
-  product: string;
-}
+import { FormData2, Product, Transaction, AvailableProduct } from '@/app/lib/definitions2';
+import { saveTransaction, availableProducts } from '@/app/lib/data2';
 
 export default function AddSalesPage() {
   const router = useRouter();
-
-  // Initialize state with TypeScript types
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState<FormData2>({
     date: '22/03/2025',
     cashier: 'Dwiki',
     customer: 'Nama Pelanggan',
@@ -54,34 +27,23 @@ export default function AddSalesPage() {
   const [isEditPopupOpen, setIsEditPopupOpen] = useState(false);
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [isSuccessPopupOpen, setIsSuccessPopupOpen] = useState(false);
-  // State for formatted payment input
   const [formattedPayment, setFormattedPayment] = useState<string>('');
 
-  // Available products
-  const availableProducts: Array<{ name: string; price: number }> = [
-    { name: 'Topeng Cicilia', price: 500000 },
-    { name: 'Topeng Jesica', price: 350000 },
-    { name: 'Topeng Dwiki', price: 300000 },
-    { name: 'Topeng Hudoq', price: 400000 },
-  ];
-
-  // Handle input changes for form fields
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
+    setFormData((prev: FormData2) => ({
       ...prev,
       [name]: name === 'discount' ? Number(value) || 0 : value,
     }));
   };
 
-  // Handle product selection and quantity changes
   const handleProductChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    const product = availableProducts.find((p) => p.name === value);
+    const product = availableProducts.find((p: AvailableProduct) => p.name === value);
     const quantity = name === 'quantity' ? Number(value) || 1 : selectedProduct.quantity;
     const price = product ? product.price : selectedProduct.price;
 
-    setSelectedProduct((prev) => ({
+    setSelectedProduct((prev: Product) => ({
       ...prev,
       [name]: value,
       price: name === 'name' && product ? product.price : prev.price,
@@ -90,14 +52,13 @@ export default function AddSalesPage() {
     }));
   };
 
-  // Add a product to the cart
   const handleAddProduct = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     if (!selectedProduct.name) return;
 
-    setFormData((prev) => {
+    setFormData((prev: FormData2) => {
       const updatedProducts = [...prev.products, { ...selectedProduct }];
-      const subtotal = updatedProducts.reduce((sum, p) => sum + p.subtotal, 0);
+      const subtotal = updatedProducts.reduce((sum: number, p: Product) => sum + p.subtotal, 0);
       return {
         ...prev,
         products: updatedProducts,
@@ -108,15 +69,14 @@ export default function AddSalesPage() {
     setIsPopupOpen(false);
   };
 
-  // Edit an existing product
   const handleEditProduct = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     if (!selectedProduct.name || editIndex === null) return;
 
-    setFormData((prev) => {
+    setFormData((prev: FormData2) => {
       const updatedProducts = [...prev.products];
       updatedProducts[editIndex] = { ...selectedProduct };
-      const subtotal = updatedProducts.reduce((sum, p) => sum + p.subtotal, 0);
+      const subtotal = updatedProducts.reduce((sum: number, p: Product) => sum + p.subtotal, 0);
       return {
         ...prev,
         products: updatedProducts,
@@ -128,7 +88,6 @@ export default function AddSalesPage() {
     setEditIndex(null);
   };
 
-  // Handle form submission
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (formData.products.length === 0) {
@@ -144,7 +103,7 @@ export default function AddSalesPage() {
     }).split('/').join('/');
 
     const productString = formData.products
-      .map((p) => `${p.name} - ${p.quantity} pcs`)
+      .map((product: Product, index: number) => `${product.name} - ${product.quantity} pcs`)
       .join(', ');
 
     const newTransaction: Transaction = {
@@ -155,42 +114,32 @@ export default function AddSalesPage() {
       product: productString,
     };
 
-    let existingTransactions: Transaction[] = [];
     try {
-      const stored = localStorage.getItem('transactions');
-      existingTransactions = stored ? JSON.parse(stored) : [];
-      const updatedTransactions = [...existingTransactions, newTransaction];
-      localStorage.setItem('transactions', JSON.stringify(updatedTransactions));
+      saveTransaction(newTransaction);
+      setIsSuccessPopupOpen(true);
     } catch (error) {
-      console.error('Error accessing localStorage:', error);
       alert('Gagal menyimpan transaksi. Pastikan localStorage tersedia.');
       return;
     }
-
-    setIsSuccessPopupOpen(true);
   };
 
-  // Handle payment amount input with Rupiah formatting
   const handlePaymentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawValue = e.target.value.replace(/[^0-9]/g, ''); // Remove all non-digits
+    const rawValue = e.target.value.replace(/[^0-9]/g, '');
     const payment = rawValue ? Number(rawValue) : 0;
     if (isNaN(payment)) return;
 
-    // Format the raw value as Rupiah (without Rp and ,00)
     const formattedValue = payment.toLocaleString('id-ID');
-
     setFormattedPayment(formattedValue);
-    setFormData((prev) => ({
+    setFormData((prev: FormData2) => ({
       ...prev,
       paymentAmount: payment,
       change: payment - prev.totalPayment,
     }));
   };
 
-  // Close success popup and reset form
   const closeSuccessPopup = () => {
     setIsSuccessPopupOpen(false);
-    setFormattedPayment(''); // Reset formatted payment
+    setFormattedPayment('');
     setFormData({
       date: '22/03/2025',
       cashier: 'Dwiki',
@@ -204,7 +153,6 @@ export default function AddSalesPage() {
     router.push('/dashboardowner/penjualan/tambah');
   };
 
-  // Popup controls
   const openPopup = () => setIsPopupOpen(true);
   const closePopup = () => {
     setIsPopupOpen(false);
@@ -277,7 +225,7 @@ export default function AddSalesPage() {
             </div>
             <div className="flex gap-6">
               <div>
-                <label className="block text-xl text-white egész mb-2 uppercase">Pegawai</label>
+                <label className="block text-xl text-white mb-2 uppercase">Pegawai</label>
                 <div className="custom-select-wrapper">
                   <select
                     name="cashier"
@@ -338,7 +286,7 @@ export default function AddSalesPage() {
                       </td>
                     </tr>
                   ) : (
-                    formData.products.map((product, index) => (
+                    formData.products.map((product: Product, index: number) => (
                       <tr key={index} className="border-t text-[#D29BC7] text-xl text-center font-bold">
                         <td className="p-4">{index + 1}</td>
                         <td className="p-4">{product.name}</td>
@@ -358,9 +306,9 @@ export default function AddSalesPage() {
                             type="button"
                             className="bg-red-500 text-white px-3 py-1 rounded"
                             onClick={() => {
-                              setFormData((prev) => {
-                                const updatedProducts = prev.products.filter((_, i) => i !== index);
-                                const subtotal = updatedProducts.reduce((sum, p) => sum + p.subtotal, 0);
+                              setFormData((prev: FormData2) => {
+                                const updatedProducts = prev.products.filter((_, i: number) => i !== index);
+                                const subtotal = updatedProducts.reduce((sum: number, p: Product) => sum + p.subtotal, 0);
                                 return {
                                   ...prev,
                                   products: updatedProducts,
@@ -395,7 +343,7 @@ export default function AddSalesPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {availableProducts.map((product, index) => (
+                    {availableProducts.map((product: AvailableProduct, index: number) => (
                       <tr key={index} className="border-t text-[#BC69A7]">
                         <td className="p-2">{index + 1}</td>
                         <td className="p-2">{product.name}</td>
@@ -403,7 +351,7 @@ export default function AddSalesPage() {
                         <td className="p-2">
                           <button
                             type="button"
-                            onClick={(e) => {
+                            onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                               e.preventDefault();
                               const newProduct = {
                                 name: product.name,
@@ -541,7 +489,7 @@ export default function AddSalesPage() {
                 <label className="block text-xl text-white mb-2 uppercase">Subtotal</label>
                 <input
                   type="text"
-                  value={`Rp${formData.products.reduce((sum, p) => sum + p.subtotal, 0).toLocaleString('id-ID')},00`}
+                  value={`Rp${formData.products.reduce((sum: number, p: Product) => sum + p.subtotal, 0).toLocaleString('id-ID')},00`}
                   readOnly
                   className="px-4 py-2 rounded border border-white bg-[#A64D79] text-white text-lg"
                   aria-label="Subtotal"

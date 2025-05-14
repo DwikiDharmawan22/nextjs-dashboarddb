@@ -2,15 +2,8 @@
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { cousine, creepster } from '@/app/ui/fonts';
-
-// Definisi tipe untuk transaksi
-interface Transaction {
-  id: string;
-  date: string;
-  totalPrice: string;
-  username: string;
-  product: string;
-}
+import { Transaction } from '@/app/lib/definitions2';
+import { loadTransactions } from '@/app/lib/data2';
 
 export default function Page() {
   const router = useRouter();
@@ -18,49 +11,16 @@ export default function Page() {
   const [searchQuery, setSearchQuery] = useState('');
   const [entriesPerPage, setEntriesPerPage] = useState<string>('4');
   const [currentPage, setCurrentPage] = useState(1);
-  const [isClient, setIsClient] = useState(false); // Tambahkan state untuk menandai sisi klien
+  const [isClient, setIsClient] = useState(false);
 
-  // Data default untuk transaksi
-  const defaultTransactions: Transaction[] = [
-    { id: '#J729', date: '2025-10-08 10:40:45', totalPrice: 'Rp1.000.000,00', username: 'Paijo', product: 'Topeng Cicilia - 2 pcs' },
-    { id: '#K729', date: '2025-10-08 10:40:45', totalPrice: 'Rp1.118.000,00', username: 'Tuyul', product: 'Topeng Jesica - 3 pcs' },
-    { id: '#L729', date: '2025-10-08 10:40:45', totalPrice: 'Rp600.000,00', username: 'Kucing', product: 'Topeng Dwiki - 2 pcs' },
-    { id: '#M729', date: '2025-10-08 10:40:45', totalPrice: 'Rp500.000,00', username: 'Hujan', product: 'Topeng Hudoo - 1 pcs' },
-  ];
-
-  // Fungsi untuk memuat transaksi dari localStorage
-  const loadTransactions = () => {
-    try {
-      const storedTransactions = JSON.parse(localStorage.getItem('transactions') || '[]');
-      if (storedTransactions.length === 0) {
-        localStorage.setItem('transactions', JSON.stringify(defaultTransactions));
-        setTransactions(defaultTransactions);
-      } else {
-        const sanitizedTransactions: Transaction[] = storedTransactions.map((transaction: Transaction) => ({
-          id: transaction.id || '',
-          date: transaction.date || '',
-          totalPrice: transaction.totalPrice || '',
-          username: transaction.username || '',
-          product: transaction.product || '',
-        }));
-        setTransactions(sanitizedTransactions);
-      }
-    } catch (error) {
-      console.error('Error loading transactions from localStorage:', error);
-      setTransactions(defaultTransactions); // Fallback ke default jika error
-    }
-  };
-
-  // Load transactions hanya di sisi klien
   useEffect(() => {
-    setIsClient(true); // Tandai bahwa kita berada di sisi klien
-    loadTransactions();
+    setIsClient(true);
+    setTransactions(loadTransactions());
   }, []);
 
-  // Perbarui transactions saat rute berubah (setelah navigasi)
   useEffect(() => {
     const handleRouteChange = () => {
-      loadTransactions();
+      setTransactions(loadTransactions());
     };
     window.addEventListener('focus', handleRouteChange);
     return () => {
@@ -68,27 +28,23 @@ export default function Page() {
     };
   }, []);
 
-  // Filter transactions berdasarkan search query
   const filteredTransactions = transactions.filter((transaction) =>
     transaction.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
     transaction.product.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Hitung pagination
   const totalPages = Math.ceil(filteredTransactions.length / Number(entriesPerPage));
   const paginatedTransactions = filteredTransactions.slice(
     (currentPage - 1) * Number(entriesPerPage),
     currentPage * Number(entriesPerPage)
   );
 
-  // Debugging: Log jumlah transaksi
   useEffect(() => {
     console.log('Entries per page:', entriesPerPage);
     console.log('Filtered transactions:', filteredTransactions.length);
     console.log('Paginated transactions:', paginatedTransactions.length);
   }, [entriesPerPage, filteredTransactions, paginatedTransactions]);
 
-  // Handlers
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
     setCurrentPage(1);
@@ -105,21 +61,18 @@ export default function Page() {
     }
   };
 
-  // Jika bukan di sisi klien, tampilkan placeholder atau kosongkan render
   if (!isClient) {
     return <div className="min-h-screen bg-[#6A1E55] text-white p-4">Loading...</div>;
   }
 
   return (
     <div className={`min-h-screen text-white p-4`} style={{ backgroundColor: '#6A1E55' }}>
-      {/* Header */}
       <div>
         <h1 className={`text-6xl text-white font-bold flex justify-center items-center ${creepster.className}`}>
           TRANSAKSI PENJUALAN
         </h1>
       </div>
 
-      {/* Top Controls */}
       <div className="flex justify-between items-center mb-4">
         <div className={`flex items-center gap-2 text-xl ${cousine.className}`}>
           <span>SHOW:</span>
@@ -152,7 +105,6 @@ export default function Page() {
         </div>
       </div>
 
-      {/* Table */}
       <div className={`flex justify-center items-center text-2xl bg-white text-black rounded-lg overflow-hidden ${cousine.className}`}>
         <table className="w-full">
           <thead>
@@ -186,7 +138,6 @@ export default function Page() {
         </table>
       </div>
 
-      {/* Pagination */}
       <div className={`flex flex-col items-center mt-16 ${cousine.className}`}>
         <div className="flex gap-2 mb-2">
           <button

@@ -1,7 +1,9 @@
 'use client';
 
-import { irishGrover } from "@/app/ui/fonts";
-import { FaMapMarkerAlt, FaPhoneAlt, FaGlobe, FaFacebook, FaInstagram, FaWhatsapp, FaPinterest } from 'react-icons/fa';
+import { irishGrover } from '@/app/ui/fonts';
+import { Contact } from '@/app/lib/definitions2';
+import { contactData } from '@/app/lib/data2';
+import { FaMapMarkerAlt, FaPhoneAlt, FaGlobe, FaFacebook, FaPinterest, FaWhatsapp, FaInstagram } from 'react-icons/fa';
 
 export default function ContactPage() {
   return (
@@ -25,18 +27,16 @@ export default function ContactPage() {
               <div className="flex items-center justify-center gap-4">
                 <FaMapMarkerAlt className="text-2xl mt-1" />
                 <p>
-                  Jalan Kebenaran dan Hidup<br />
-                  No. 77, Sleman Concat<br />
-                  Babarsari Depok
+                  {contactData.location}
                 </p>
               </div>
               <div className="flex items-center justify-center gap-4">
                 <FaPhoneAlt className="text-2xl" />
-                <p>0821-2881-1829</p>
+                <p>{contactData.phone}</p>
               </div>
               <div className="flex items-center justify-center gap-4">
                 <FaGlobe className="text-2xl" />
-                <p>www.uajy.ac.id</p>
+                <p>{contactData.website}</p>
               </div>
             </div>
           </div>

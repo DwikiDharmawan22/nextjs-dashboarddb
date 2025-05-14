@@ -10,17 +10,17 @@ export default function AddProductPage() {
     id: '',
     name: '',
     price: '',
-    image: null,
+    image: null as File | null,
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     console.log('New product:', formData);
     alert('Product added successfully!');
     router.push('/products');
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -28,10 +28,10 @@ export default function AddProductPage() {
     }));
   };
 
-  const handleImageChange = (e) => {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({
       ...prev,
-      image: e.target.files[0],
+      image: e.target.files ? e.target.files[0] : null,
     }));
   };
 

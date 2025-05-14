@@ -2,6 +2,8 @@
 
 import Image from 'next/image';
 import { creepster, irishGrover } from '@/app/ui/fonts';
+import { TeamMember } from '@/app/lib/definitions2';
+import { teamMembers } from '@/app/lib/data2';
 
 export default function AboutPage() {
   return (
@@ -28,24 +30,15 @@ export default function AboutPage() {
             style={{ writingMode: 'vertical-lr', textOrientation: 'upright' }}>OUR ARTIST</h2>
         </div>
 
-
         <div className="flex flex-col md:flex-row gap-4">
-          <Team
-            image="/dwiki.png"
-            name="Dwiki Dharmawan"
-            desc="Barongsai KW yang menjadi astagfirullah gatau mau nulis apa"
-          />
-          <Team
-            image="/Jesica.png"
-            name="Jesica Sihombing"
-            desc="China KW gatau juga ini mau ngetik apaan tapi yaudahlah yahh"
-          />
-          {/* Gadja */}
-          <Team
-            image="/cicilia.png"
-            name="Cicilia Gadja"
-            desc="nama ku gadja yaa bukan gadjah apalagi gajah #krisis identitas"
-          />
+          {teamMembers.map((member, index) => (
+            <Team
+              key={index}
+              image={member.image}
+              name={member.name}
+              desc={member.desc}
+            />
+          ))}
         </div>
 
         <div className="mt-8 md:mt-0 md:ml-6 max-w-sm text-left">
@@ -61,14 +54,14 @@ export default function AboutPage() {
   );
 }
 
-function Team({ image, name, desc }: { image: string; name: string; desc: string }) {
+function Team({ image, name, desc }: TeamMember) {
   return (
     <div
       className="relative bg-[#A64D79] p-4 rounded-xl shadow-2xl w-[250px] h-[420px] flex flex-col items-center justify-center overflow-hidden"
       style={{
-        backgroundImage:`url('/bg profile klpok.jpeg')`,
-        backgroundSize:'cover',
-        backgroundPosition:'center',
+        backgroundImage: `url('/bg profile klpok.jpeg')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
       }}
     >
       <div className="absolute inset-0 bg-[#A64D79] opacity-80"></div>
