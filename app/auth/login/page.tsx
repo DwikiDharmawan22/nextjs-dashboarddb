@@ -8,37 +8,14 @@ import { toast } from 'react-toastify';
 import dynamic from 'next/dynamic';
 import AuthFormWrapper from '@/components/AuthFormWrapper';
 import { doppio_one } from '@/app/ui/fonts';
+import { LoginFormData, ErrorObject } from '@/app/lib/definitions2';
+import { VALID_EMAIL, VALID_PASSWORD, ADMIN_EMAIL, ADMIN_PASSWORD, generateRandomCaptcha } from '@/app/lib/data2';
 
 // Dynamic import untuk komponen yang mungkin menggunakan browser APIs
 const SocialAuth = dynamic(() => import('@/components/SocialAuth'), {
   ssr: false,
   loading: () => <p>Loading social auth...</p>
 });
-
-interface LoginFormData {
-  email: string;
-  password: string;
-  captchaInput: string;
-}
-
-interface ErrorObject {
-  email?: string;
-  password?: string;
-  captcha?: string;
-}
-
-const VALID_EMAIL = 'user123';
-const VALID_PASSWORD = '12345';
-const ADMIN_EMAIL = 'admin123';
-const ADMIN_PASSWORD = '12345';
-
-const generateRandomCaptcha = (): string => {
-  // Return empty string during SSR
-  if (typeof window === 'undefined') return '';
-  
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  return Array.from({ length: 6 }, () => characters[Math.floor(Math.random() * characters.length)]).join('');
-};
 
 const LoginPage = () => {
   const router = useRouter();
@@ -80,7 +57,7 @@ const LoginPage = () => {
       (formData.email === ADMIN_EMAIL && formData.password !== ADMIN_PASSWORD)
     ) newErrors.password = 'Password tidak sesuai';
 
-    if (formData.captchaInput !== captcha) newErrors.captcha = 'Captcha tidak valid';
+    if (formData.captchaInput !== captcha) newErrors.captcha = 'Captcha tidak  valid';
 
     return newErrors;
   };
@@ -112,16 +89,11 @@ const LoginPage = () => {
 
     toast.success('Login Berhasil!', { theme: 'dark', position: 'top-right' });
 
-    // Store login status and role in localStorage (client-side only)
-    if (isClient) {
-      localStorage.setItem('isLoggedIn', 'true');
-      localStorage.setItem('role', formData.email === ADMIN_EMAIL ? 'admin' : 'user');
-      
-      if (formData.email === ADMIN_EMAIL) {
-        router.push('/dashboardowner');
-      } else {
-        router.push('/dashboard');
-      }
+    // Navigate based on role without using localStorage
+    if (formData.email === ADMIN_EMAIL) {
+      router.push('/dashboardowner');
+    } else {
+      router.push('/dashboard');
     }
   };
 

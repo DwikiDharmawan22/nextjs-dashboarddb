@@ -394,37 +394,3 @@ export const contactData: Contact = {
   phone: '0821-2881-1829',
   website: 'www.uajy.ac.id',
 };
-
-//login
-export const VALID_EMAIL = 'user123';
-export const VALID_PASSWORD = '12345';
-export const ADMIN_EMAIL = 'admin123';
-export const ADMIN_PASSWORD = '12345';
-
-export const generateRandomCaptcha = (): string => {
-  // Return empty string during SSR
-  if (typeof window === 'undefined') return '';
-  
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  return Array.from({ length: 6 }, () => characters[Math.floor(Math.random() * characters.length)]).join('');
-};
-
-//register
-export const generateCaptcha = (): string => {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    return Array.from({ length: 6 }, () => characters[Math.floor(Math.random() * characters.length)]).join('');
-};
-
-//forger pass
-export const VALID_EMAIL1 = 'user123';
-export const ADMIN_EMAIL1 = 'admin123';
-
-export const calculatePasswordStrength = (password: string, setPasswordStrength: (strength: number) => void) => {
-  let strength = 0;
-  if (password.length > 0) strength += 20;
-  if (password.length >= 8) strength += 20;
-  if (/[A-Z]/.test(password)) strength += 20;
-  if (/[0-9]/.test(password)) strength += 20;
-  if (/[^A-Za-z0-9]/.test(password)) strength += 20;
-  setPasswordStrength(strength);
-};

@@ -7,21 +7,8 @@ import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import AuthFormWrapper from '@/components/AuthFormWrapper';
 import { doppio_one } from '@/app/ui/fonts';
-
-interface ForgotPasswordFormData {
-  email: string;
-  newPassword: string;
-  confirmPassword: string;
-}
-
-interface ErrorObject {
-  email?: string;
-  newPassword?: string;
-  confirmPassword?: string;
-}
-
-const VALID_EMAIL = 'user123'; // Hardcoded email for demo purposes
-const ADMIN_EMAIL = 'admin123';
+import { ForgotPasswordFormData, ErrorObject } from '@/app/lib/definitions2';
+import { VALID_EMAIL1, ADMIN_EMAIL1, calculatePasswordStrength } from '@/app/lib/data2';
 
 const ForgotPasswordPage = () => {
   const router = useRouter();
@@ -35,21 +22,10 @@ const ForgotPasswordPage = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState(0);
 
-  // Calculate password strength
-  const calculatePasswordStrength = (password: string) => {
-    let strength = 0;
-    if (password.length > 0) strength += 20; // Base strength for non-empty
-    if (password.length >= 8) strength += 20; // Length
-    if (/[A-Z]/.test(password)) strength += 20; // Uppercase
-    if (/[0-9]/.test(password)) strength += 20; // Number
-    if (/[^A-Za-z0-9]/.test(password)) strength += 20; // Special character
-    setPasswordStrength(strength);
-  };
-
   const validateForm = (): ErrorObject => {
     const newErrors: ErrorObject = {};
     if (!formData.email.trim()) newErrors.email = 'Email tidak boleh kosong';
-    else if (formData.email !== VALID_EMAIL && formData.email !== ADMIN_EMAIL)
+    else if (formData.email !== VALID_EMAIL1 && formData.email !== ADMIN_EMAIL1)
       newErrors.email = 'Email tidak terdaftar';
 
     if (!formData.newPassword.trim()) newErrors.newPassword = 'Password baru tidak boleh kosong';
@@ -67,7 +43,7 @@ const ForgotPasswordPage = () => {
     setErrors((prev) => ({ ...prev, [name]: undefined }));
 
     if (name === 'newPassword') {
-      calculatePasswordStrength(value);
+      calculatePasswordStrength(value, setPasswordStrength);
     }
   };
 
@@ -81,9 +57,6 @@ const ForgotPasswordPage = () => {
     }
 
     toast.success('Password berhasil direset!', { theme: 'dark', position: 'top-right' });
-
-    // In a real app, you'd send a request to a backend to update the password
-    // For this demo, we'll just redirect to the login page
     router.push('/auth/login');
   };
 

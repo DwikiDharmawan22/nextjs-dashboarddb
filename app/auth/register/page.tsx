@@ -9,15 +9,8 @@ import Link from 'next/link';
 import AuthFormWrapper from '@/components/AuthFormWrapper';
 import SocialAuth from '@/components/SocialAuth';
 import { doppio_one } from '@/app/ui/fonts';
-
-type RegisterFormData = {
-    username: string;
-    email: string;
-    nomorTelp: string;
-    password: string;
-    confirmPassword: string;
-    captcha: string;
-};
+import { RegisterFormData } from '@/app/lib/definitions2';
+import { generateCaptcha } from '@/app/lib/data2';
 
 const RegisterPage = () => {
     const router = useRouter();
@@ -25,7 +18,6 @@ const RegisterPage = () => {
     const [captchaInput, setCaptchaInput] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const [isConfirmFocused, setIsConfirmFocused] = useState(false);
     const [passwordStrength, setPasswordStrength] = useState(0);
     const { register, handleSubmit, watch, formState: { errors }, reset } = useForm<RegisterFormData>();
     
@@ -41,11 +33,6 @@ const RegisterPage = () => {
         setPasswordStrength(strength);
     }, [password]);
 
-    const generateCaptcha = useCallback(() => {
-        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        return Array.from({ length: 6 }, () => characters[Math.floor(Math.random() * characters.length)]).join('');
-    }, []);
-    
     useEffect(() => {
         setCaptcha(generateCaptcha());
         reset();

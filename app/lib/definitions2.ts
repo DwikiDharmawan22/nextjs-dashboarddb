@@ -153,3 +153,39 @@ export interface Contact {
   phone: string;
   website: string;
 }
+
+//login
+export interface LoginFormData {
+  email: string;
+  password: string;
+  captchaInput: string;
+}
+
+export interface ErrorObject {
+  email?: string;
+  password?: string;
+  captcha?: string;
+}
+
+//register
+export type RegisterFormData = {
+    username: string;
+    email: string;
+    nomorTelp: string;
+    password: string;
+    confirmPassword: string;
+    captcha: string;
+};
+
+//forger pass
+export interface ForgotPasswordFormData {
+  email: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+export interface ErrorObject {
+  email?: string;
+  newPassword?: string;
+  confirmPassword?: string;
+}
