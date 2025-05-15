@@ -1,423 +1,395 @@
-// pelanggan
-import { Customer } from './definitions2';
+import postgres from 'postgres';
+import {
+  Customer,
+  Transaction,
+  SaleProduct,
+  ShopProduct,
+  TeamMember,
+  reviewProduct,
+  blogProduct,
+  Contact,
+  ChartData,
+  ProductPelanggan,
+  Product1,
+  Profile,
+  AvailableProduct,
+} from '@/app/lib/definitions2';
+import { formatCurrency } from './utils';
 
-export const defaultCustomers: Customer[] = [
-  {
-    username: 'Century',
-    email: 'cent29@gmail.com',
-    phone: '0836181937',
-    transactions: ['2 Topeng Cicilia', '1 Topeng Hudoq', '10 Topeng Jesica'],
-  },
-  {
-    username: 'Yonoji',
-    email: 'cent29@gmail.com',
-    phone: '0836181937',
-    transactions: ['2 Topeng Cicilia', '10 Topeng Jesica'],
-  },
-  {
-    username: 'Sutami',
-    email: 'cent29@gmail.com',
-    phone: '0836181937',
-    transactions: ['2 Topeng Cicilia', '5 Topeng Hudoq'],
-  },
-  {
-    username: 'Ohena',
-    email: 'cent29@gmail.com',
-    phone: '0836181937',
-    transactions: ['2 Topeng Cicilia', '1 Topeng Hudoq', '19 Topeng Jesica'],
-  },
-];
+const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
 
-export const loadCustomers = (): Customer[] => {
+// Customers
+export async function fetchCustomers(): Promise<Customer[]> {
   try {
-    const storedCustomers = JSON.parse(localStorage.getItem('customers') || '[]');
-    if (storedCustomers.length === 0) {
-      localStorage.setItem('customers', JSON.stringify(defaultCustomers));
-      return defaultCustomers;
-    }
-    return storedCustomers.map((customer: Customer) => ({
+    const data = await sql<Customer[]>`
+      SELECT * FROM customers
+      ORDER BY username ASC
+    `;
+    return data.map((customer) => ({
       ...customer,
       transactions: Array.isArray(customer.transactions) ? customer.transactions : [],
     }));
   } catch (error) {
-    console.error('Error parsing customers from localStorage:', error);
-    return [];
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch customers.');
   }
-};
+}
 
-export const saveCustomers = (customers: Customer[]): void => {
-  localStorage.setItem('customers', JSON.stringify(customers));
-};
-
-//penjualan
-import { Transaction, AvailableProduct } from './definitions2';
-
-export const defaultTransactions: Transaction[] = [
-  { id: '#J729', date: '2025-10-08 10:40:45', totalPrice: 'Rp1.000.000,00', username: 'Paijo', product: 'Topeng Cicilia - 2 pcs' },
-  { id: '#K729', date: '2025-10-08 10:40:45', totalPrice: 'Rp1.118.000,00', username: 'Tuyul', product: 'Topeng Jesica - 3 pcs' },
-  { id: '#L729', date: '2025-10-08 10:40:45', totalPrice: 'Rp600.000,00', username: 'Kucing', product: 'Topeng Dwiki - 2 pcs' },
-  { id: '#M729', date: '2025-10-08 10:40:45', totalPrice: 'Rp500.000,00', username: 'Hujan', product: 'Topeng Hudoo - 1 pcs' },
-];
-
-export const loadTransactions = (): Transaction[] => {
+export async function fetchCustomerById(id: string): Promise<Customer | null> {
   try {
-    const storedTransactions = JSON.parse(localStorage.getItem('transactions') || '[]');
-    if (storedTransactions.length === 0) {
-      localStorage.setItem('transactions', JSON.stringify(defaultTransactions));
-      return defaultTransactions;
+    const data = await sql<Customer[]>`
+      SELECT * FROM customers
+      WHERE id = ${id}
+    `;
+    if (data.length === 0) return null;
+    return {
+      ...data[0],
+      transactions: Array.isArray(data[0].transactions) ? data[0].transactions : [],
+    };
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch customer.');
+  }
+}
+
+export async function saveCustomer(customer: Customer): Promise<void> {
+  try {
+    if (customer.id) {
+      await sql`
+        UPDATE customers
+        SET username = ${customer.username},
+            email = ${customer.email},
+            phone = ${customer.phone},
+            transactions = ${customer.transactions}
+        WHERE id = ${customer.id}
+      `;
+    } else {
+      await sql`
+        INSERT INTO customers (username, email, phone, transactions)
+        VALUES (${customer.username}, ${customer.email}, ${customer.phone}, ${customer.transactions})
+      `;
     }
-    return storedTransactions.map((transaction: Transaction) => ({
-      id: transaction.id || '',
-      date: transaction.date || '',
-      totalPrice: transaction.totalPrice || '',
-      username: transaction.username || '',
-      product: transaction.product || '',
-    }));
   } catch (error) {
-    console.error('Error loading transactions from localStorage:', error);
-    return defaultTransactions;
+    console.error('Database Error:', error);
+    throw new Error('Failed to save customer.');
   }
-};
+}
 
-export const saveTransactions = (transactions: Transaction[]): void => {
-  localStorage.setItem('transactions', JSON.stringify(transactions));
-};
-
-// tambah penjualan
-
-export const availableProducts: AvailableProduct[] = [
-  { name: 'Topeng Cicilia', price: 500000 },
-  { name: 'Topeng Jesica', price: 350000 },
-  { name: 'Topeng Dwiki', price: 300000 },
-  { name: 'Topeng Hudoq', price: 400000 },
-];
-
-export const saveTransaction = (newTransaction: Transaction): void => {
+// Transactions
+export async function fetchTransactions(): Promise<Transaction[]> {
   try {
-    const stored = localStorage.getItem('transactions');
-    const existingTransactions: Transaction[] = stored ? JSON.parse(stored) : [];
-    const updatedTransactions = [...existingTransactions, newTransaction];
-    localStorage.setItem('transactions', JSON.stringify(updatedTransactions));
+    const data = await sql<Transaction[]>`
+      SELECT * FROM transactions
+      ORDER BY date DESC
+    `;
+    return data;
   } catch (error) {
-    console.error('Error saving transaction to localStorage:', error);
-    throw new Error('Failed to save transaction');
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch transactions.');
   }
-};
-//product
-import { SaleProduct } from './definitions2';
+}
 
-export const defaultProducts: SaleProduct[] = [
-  { id: '#J729', image: '/topeng cicilia.png', name: 'Topeng Cicilia', price: '500.000 IDR' },
-  { id: '#K729', image: '/topeng jesica.png', name: 'Topeng Jesica', price: '370.000 IDR' },
-  { id: '#L729', image: '/topeng dwiki.png', name: 'Topeng Dwiki', price: '300.000 IDR' },
-];
-
-export const loadProducts = (): SaleProduct[] => {
+export async function saveTransaction(newTransaction: Transaction): Promise<void> {
   try {
-    const storedProducts = JSON.parse(localStorage.getItem('products') || '[]');
-    if (storedProducts.length === 0) {
-      localStorage.setItem('products', JSON.stringify(defaultProducts));
-      return defaultProducts;
+    await sql`
+      INSERT INTO transactions (id, date, total_price, username, product)
+      VALUES (${newTransaction.id}, ${newTransaction.date}, ${newTransaction.totalPrice}, ${newTransaction.username}, ${newTransaction.product})
+    `;
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to save transaction.');
+  }
+}
+
+// Products
+export async function fetchProducts(): Promise<SaleProduct[]> {
+  try {
+    const data = await sql<SaleProduct[]>`
+      SELECT * FROM products
+      ORDER BY name ASC
+    `;
+    return data;
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch products.');
+  }
+}
+
+export async function saveProduct(product: SaleProduct): Promise<void> {
+  try {
+    await sql`
+      INSERT INTO products (id, image, name, price)
+      VALUES (${product.id}, ${product.image}, ${product.name}, ${product.price})
+      ON CONFLICT (id) DO UPDATE
+      SET image = EXCLUDED.image,
+          name = EXCLUDED.name,
+          price = EXCLUDED.price
+    `;
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to save product.');
+  }
+}
+
+// Shop Products
+export async function fetchShopProducts(): Promise<ShopProduct[]> {
+  try {
+    const data = await sql<ShopProduct[]>`
+      SELECT * FROM shop_products
+      ORDER BY name ASC
+    `;
+    return data;
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch shop products.');
+  }
+}
+
+// Team Members
+export async function fetchTeamMembers(): Promise<TeamMember[]> {
+  try {
+    const data = await sql<TeamMember[]>`
+      SELECT * FROM team_members
+      ORDER BY name ASC
+    `;
+    return data;
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch team members.');
+  }
+}
+
+// Reviews
+export async function fetchReviews(): Promise<reviewProduct[]> {
+  try {
+    const data = await sql<reviewProduct[]>`
+      SELECT * FROM reviews
+      ORDER BY name ASC
+    `;
+    return data;
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch reviews.');
+  }
+}
+
+// Blogs
+export async function fetchBlogs(): Promise<blogProduct[]> {
+  try {
+    const data = await sql<blogProduct[]>`
+      SELECT * FROM blogs
+      ORDER BY post_date DESC
+    `;
+    return data;
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch blogs.');
+  }
+}
+
+// Contacts
+export async function fetchContactData(): Promise<Contact> {
+  try {
+    const data = await sql<Contact[]>`
+      SELECT * FROM contacts
+      LIMIT 1
+    `;
+    if (data.length === 0) {
+      throw new Error('No contact data found in database.');
     }
-    return storedProducts.map((product: SaleProduct) => ({
-      id: product.id || '',
-      image: product.image || '',
-      name: product.name || '',
-      price: product.price || '',
-    }));
+    return data[0];
   } catch (error) {
-    console.error('Error loading products from localStorage:', error);
-    return defaultProducts;
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch contact data.');
   }
-};
+}
 
-export const saveProducts = (products: SaleProduct[]): void => {
-  localStorage.setItem('products', JSON.stringify(products));
-};
-
-//dashboard
-import { ChartData } from './definitions2';
-
-export const fetchDashboardData = async (setDailyIncomeData: (data: ChartData) => void, setMonthlyIncomeData: (data: ChartData) => void, setLoading: (loading: boolean) => void) => {
+// Dashboard
+export async function fetchDashboardData(
+  setDailyIncomeData: (data: ChartData) => void,
+  setMonthlyIncomeData: (data: ChartData) => void,
+  setLoading: (loading: boolean) => void
+): Promise<void> {
   try {
-    // Simulate delay fetching data
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
+    // Simulate delay for demo purposes
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    // Fetch daily income (aggregated by day of week)
+    const dailyData = await sql`
+      SELECT
+        EXTRACT(DOW FROM date) AS day,
+        SUM(CAST(REPLACE(REPLACE(total_price, 'Rp', ''), ',00', '') AS NUMERIC)) AS total
+      FROM transactions
+      WHERE date >= CURRENT_DATE - INTERVAL '7 days'
+      GROUP BY day
+      ORDER BY day
+    `;
+
+    const dailyLabels = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    const dailyValues = new Array(7).fill(0);
+    dailyData.forEach((row) => {
+      dailyValues[parseInt(row.day)] = row.total;
+    });
+
     setDailyIncomeData({
-      labels: ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"],
+      labels: dailyLabels,
       datasets: [{
-        label: "Pendapatan Harian",
-        data: [30000, 35000, 20000, 25000, 40000],
-        backgroundColor: "#29CA2E",
-        borderColor: "#29CA2E",
+        label: 'Pendapatan Harian',
+        data: dailyValues,
+        backgroundColor: '#29CA2E',
+        borderColor: '#29CA2E',
         borderWidth: 1,
       }],
+    });
+
+    // Fetch monthly income
+    const monthlyData = await sql`
+      SELECT
+        EXTRACT(MONTH FROM date) AS month,
+        SUM(CAST(REPLACE(REPLACE(total_price, 'Rp', ''), ',00', '') AS NUMERIC)) AS total
+      FROM transactions
+      WHERE date >= CURRENT_DATE - INTERVAL '12 months'
+      GROUP BY month
+      ORDER BY month
+    `;
+
+    const monthlyLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+    const monthlyValues = new Array(12).fill(0);
+    monthlyData.forEach((row) => {
+      monthlyValues[parseInt(row.month) - 1] = row.total;
     });
 
     setMonthlyIncomeData({
-      labels: ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des"],
+      labels: monthlyLabels,
       datasets: [{
-        label: "Pendapatan Bulanan",
-        data: [15000, 20000, 25000, 30000, 18000, 22000, 28000, 32000, 20000, 25000, 15000, 10000],
-        backgroundColor: "#E92020",
-        borderColor: "#E92020",
+        label: 'Pendapatan Bulanan',
+        data: monthlyValues,
+        backgroundColor: '#E92020',
+        borderColor: '#E92020',
         borderWidth: 1,
       }],
     });
 
     setLoading(false);
   } catch (error) {
-    console.error("Error fetching data:", error);
+    console.error('Database Error:', error);
     setLoading(false);
+    throw new Error('Failed to fetch dashboard data.');
   }
-};
+}
 
-//profile
-import { Profile } from '@/app/lib/definitions2';
+// Profile
+export async function fetchProfile(): Promise<Profile> {
+  try {
+    const data = await sql<Profile[]>`
+      SELECT * FROM profiles
+      LIMIT 1
+    `;
+    if (data.length === 0) {
+      throw new Error('No profile data found in database.');
+    }
+    return data[0];
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch profile data.');
+  }
+}
 
-export const profileData: Profile = {
-  name: 'Dwiki Dharmawan',
-  role: 'Pegawai',
-  email: 'cicilia175@gmail.com',
-  phone: '083418461937',
-  facebook: '@Ciciliaaa',
-};
+// Product Pelanggan
+export async function fetchProductPelanggan(): Promise<ProductPelanggan[]> {
+  try {
+    const data = await sql<ProductPelanggan[]>`
+      SELECT * FROM product_pelanggan
+      ORDER BY name ASC
+    `;
+    return data;
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch product pelanggan.');
+  }
+}
 
-//Pelanggan
-import { ProductPelanggan } from '@/app/lib/definitions2';
+// Product Details
+export async function fetchProductDetails(name: string): Promise<Product1 | null> {
+  try {
+    const data = await sql<Product1[]>`
+      SELECT * FROM product_details
+      WHERE name = ${name}
+    `;
+    if (data.length === 0) return null;
+    return data[0];
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch product details.');
+  }
+}
 
-export const products: ProductPelanggan[] = [
-  {
-    name: "TOPENG DWIKI",
-    imageSrc: "/topeng dwiki.png",
-    width: 190,
-    height: 150,
-    altText: "Topeng Dwiki",
-    link: "/dashboard/product",
-  },
-  {
-    name: "TOPENG JESICA",
-    imageSrc: "/topeng jesica.png",
-    width: 150,
-    height: 150,
-    altText: "Topeng Jesica",
-    link: "/dashboard/product/product2",
-  },
-  {
-    name: "TOPENG CICILIA",
-    imageSrc: "/topeng cicilia.png",
-    width: 167,
-    height: 150,
-    altText: "Topeng Cicilia",
-    link: "/dashboard/product/product3",
-  },
-];
+// Available Products
+export async function fetchAvailableProducts(): Promise<AvailableProduct[]> {
+  try {
+    const data = await sql<AvailableProduct[]>`
+      SELECT * FROM available_products
+      ORDER BY name ASC
+    `;
+    return data;
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch available products.');
+  }
+}
 
-// about
-import { TeamMember } from '@/app/lib/definitions2';
+// Authentication
+export async function validateUser(email: string, password: string): Promise<{ isValid: boolean; role: string }> {
+  try {
+    const data = await sql`
+      SELECT role FROM users
+      WHERE email = ${email} AND password = ${password}
+    `;
+    if (data.length === 0) {
+      return { isValid: false, role: '' };
+    }
+    return { isValid: true, role: data[0].role };
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to validate user.');
+  }
+}
 
-export const teamMembers: TeamMember[] = [
-  {
-    image: '/dwiki.png',
-    name: 'Dwiki Dharmawan',
-    desc: 'Barongsai KW yang menjadi astagfirullah gatau mau nulis apa',
-  },
-  {
-    image: '/Jesica.png',
-    name: 'Jesica Sihombing',
-    desc: 'China KW gatau juga ini mau ngetik apaan tapi yaudahlah yahh',
-  },
-  {
-    image: '/cicilia.png',
-    name: 'Cicilia Gadja',
-    desc: 'nama ku gadja yaa bukan gadjah apalagi gajah #krisis identitas',
-  },
-];
+export async function registerUser(email: string, password: string, role: string = 'user'): Promise<void> {
+  try {
+    await sql`
+      INSERT INTO users (email, password, role)
+      VALUES (${email}, ${password}, ${role})
+    `;
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to register user.');
+  }
+}
 
-//Shop
-import { ShopProduct } from '@/app/lib/definitions2';
-
-export const shopproducts: ShopProduct[] = [
-  {
-    image: '/topeng dwiki.png',
-    name: 'TOPENG DWIKI',
-    width: 150,
-    height: 150,
-    link: '/dashboard/product',
-  },
-  {
-    image: '/topeng jesica.png',
-    name: 'TOPENG JESICA',
-    width: 220,
-    height: 240,
-    link: '/dashboard/product/product2',
-  },
-  {
-    image: '/topeng cicilia.png',
-    name: 'TOPENG CICILIA',
-    width: 220,
-    height: 240,
-    link: '/dashboard/product/product3',
-  },
-  {
-    image: '/topeng jesica.png',
-    name: 'TOPENG CICILIA',
-    width: 220,
-    height: 240,
-    link: '/dashboard/product',
-  },
-];
-
-//product
-//product1
-import { Product1 } from '@/app/lib/definitions2';
-import { FaCubes, FaFileAlt, FaPaintBrush } from 'react-icons/fa';
-
-export const product1: Product1 = {
-  image: '/topeng dwiki.png',
-  name: 'TOPENG DWIKI',
-  description: 'THIS IS A MASK THAT COMES FROM THE RIAU ISLANDS.\nWHERE THIS MASK IS A PP TEACHING ASSISTANT, THIS\nMASK CAN ALSO COPE.',
-  materials: [
-    { name: 'SELECTED MAHOGANY WOOD', icon: FaCubes },
-    { name: 'DUMLING PAPER', icon: FaFileAlt },
-    { name: 'HIGHLY PIGMENTED NATURAL PAINT', icon: FaPaintBrush },
-  ],
-  price: 'RP 300.000,-',
-  rating: 4.5,
-  navigation: {
-    back: '/dashboard/product/product3',
-    next: '/dashboard/product/product2',
-  },
-};
-
-//product2
-export const product2: Product1 = {
-  image: '/topeng jesica.png',
-  name: 'TOPENG JESICA',
-  description: 'THIS IS A MASK THAT COMES FROM BATAK, WHERE THIS.\nMASK IS A CHINESE IMITATION, THIS MASK CAN ALSO\nCODE.',
-  materials: [
-    { name: 'SELECTED MAHOGANY WOOD', icon: FaCubes },
-    { name: 'DUMPLING PAPER', icon: FaFileAlt },
-    { name: 'HIGHLY PIGMENTED NATURAL PAINT', icon: FaPaintBrush },
-  ],
-  price: 'RP 370.000,-',
-  rating: 3.5,
-  navigation: {
-    back: '/dashboard/product2',
-    next: '/dashboard/product/product3',
-  },
-};
-
-//product 3
-export const product3: Product1 = {
-  image: '/topeng cicilia.png',
-  name: 'TOPENG CICILIA',
-  description: 'THIS IS A MASK THAT COMES FROM JAKARTA, WHERE THIS\nMASK IS EXPERIENCING A BIT OF AN IDENTITY CRISIS,\nTHIS MASK CAN ALSO COPE.',
-  materials: [
-    { name: 'SELECTED MAHOGANY WOOD', icon: FaCubes },
-    { name: 'DUMPLING PAPER', icon: FaFileAlt },
-    { name: 'HIGHLY PIGMENTED NATURAL PAINT', icon: FaPaintBrush },
-  ],
-  price: 'RP 500.000,-',
-  rating: 5,
-  navigation: {
-    back: '/dashboard/product/product2',
-    next: '/dashboard/product',
-  },
-};
-
-//review
-import { reviewProduct } from '@/app/lib/definitions2';
-
-export const reviewproducts: reviewProduct[] = [
-  {
-    image: '/topeng dwiki.png',
-    name: 'TOPENG DWIKI',
-    width: 130,
-    height: 130,
-    rating: 4.5,
-    description: 'Amazing mask shop with\nhigh-quality designs!\nComfortable, durable, and\nperfect for any occasion.',
-  },
-  {
-    image: '/topeng jesica.png',
-    name: 'TOPENG JESICA',
-    width: 200,
-    height: 220,
-    rating: 4.5,
-    description: 'Amazing mask shop with\nhigh-quality designs!\nComfortable, durable, and\nperfect for any occasion.',
-  },
-  {
-    image: '/topeng cicilia.png',
-    name: 'TOPENG CICILIA',
-    width: 200,
-    height: 220,
-    rating: 4.5,
-    description: 'Amazing mask shop with\nhigh-quality designs!\nComfortable, durable, and\nperfect for any occasion.',
-  },
-];
-
-//blog
-import { blogProduct } from '@/app/lib/definitions2';
-
-export const blogproducts: blogProduct[] = [
-  {
-    image: '/topeng jesica.png',
-    name: 'Topeng Jesica',
-    postDate: '05 Jan, 2023',
-    description: 'Used in the hudoq dance,\na traditional art of the Dayak tribe.',
-  },
-  {
-    image: '/topeng cicilia.png',
-    name: 'Topeng Cicilia',
-    postDate: '05 Jan, 2023',
-    description: 'Used in the hudoq dance,\na traditional art of the Dayak tribe.',
-  },
-  {
-    image: '/topeng cicilia.png',
-    name: 'Topeng Cicilia',
-    postDate: '05 Jan, 2023',
-    description: 'Used in the hudoq dance,\na traditional art of the Dayak tribe.',
-  },
-  {
-    image: '/topeng jesica.png',
-    name: 'Topeng Jesica',
-    postDate: '05 Jan, 2023',
-    description: 'Used in the hudoq dance,\na traditional art of the Dayak tribe.',
-  },
-];
-
-//contact
-import { Contact } from '@/app/lib/definitions2';
-
-export const contactData: Contact = {
-  location: 'Jalan Kebenaran dan Hidup\nNo. 77, Sleman Concat\nBabarsari Depok',
-  phone: '0821-2881-1829',
-  website: 'www.uajy.ac.id',
-};
-
-//login
-export const VALID_EMAIL = 'user123';
-export const VALID_PASSWORD = '12345';
-export const ADMIN_EMAIL = 'admin123';
-export const ADMIN_PASSWORD = '12345';
+export async function checkEmailExists(email: string): Promise<boolean> {
+  try {
+    const data = await sql`
+      SELECT 1 FROM users
+      WHERE email = ${email}
+    `;
+    return data.length > 0;
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to check email.');
+  }
+}
 
 export const generateRandomCaptcha = (): string => {
-  // Return empty string during SSR
   if (typeof window === 'undefined') return '';
-  
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   return Array.from({ length: 6 }, () => characters[Math.floor(Math.random() * characters.length)]).join('');
 };
 
-//register
 export const generateCaptcha = (): string => {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    return Array.from({ length: 6 }, () => characters[Math.floor(Math.random() * characters.length)]).join('');
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  return Array.from({ length: 6 }, () => characters[Math.floor(Math.random() * characters.length)]).join('');
 };
-
-//forger pass
-export const VALID_EMAIL1 = 'user123';
-export const ADMIN_EMAIL1 = 'admin123';
 
 export const calculatePasswordStrength = (password: string, setPasswordStrength: (strength: number) => void) => {
   let strength = 0;
