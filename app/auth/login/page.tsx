@@ -1,3 +1,4 @@
+// app/auth/login/page.tsx
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -10,15 +11,16 @@ import AuthFormWrapper from '@/components/AuthFormWrapper';
 import { doppio_one } from '@/app/ui/fonts';
 import { LoginFormData, ErrorObject } from '@/app/lib/definitions2';
 import { VALID_EMAIL, VALID_PASSWORD, ADMIN_EMAIL, ADMIN_PASSWORD, generateRandomCaptcha } from '@/app/lib/data2';
+import { useAuth } from '@/app/lib/auth-context';
 
-// Dynamic import untuk komponen yang mungkin menggunakan browser APIs
 const SocialAuth = dynamic(() => import('@/components/SocialAuth'), {
   ssr: false,
-  loading: () => <p>Loading social auth...</p>
+  loading: () => <p>Loading social auth...</p>,
 });
 
 const LoginPage = () => {
   const router = useRouter();
+  const { login } = useAuth();
   const [formData, setFormData] = useState<LoginFormData>({
     email: '',
     password: '',
@@ -30,7 +32,6 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
-  // Set isClient to true when component mounts
   useEffect(() => {
     setIsClient(true);
   }, []);
@@ -39,7 +40,6 @@ const LoginPage = () => {
     setCaptcha(generateRandomCaptcha());
   }, []);
 
-  // Initialize captcha only on client side
   useEffect(() => {
     if (isClient) {
       refreshCaptcha();
@@ -55,9 +55,10 @@ const LoginPage = () => {
     else if (
       (formData.email === VALID_EMAIL && formData.password !== VALID_PASSWORD) ||
       (formData.email === ADMIN_EMAIL && formData.password !== ADMIN_PASSWORD)
-    ) newErrors.password = 'Password tidak sesuai';
+    )
+      newErrors.password = 'Password tidak sesuai';
 
-    if (formData.captchaInput !== captcha) newErrors.captcha = 'Captcha tidak  valid';
+    if (formData.captchaInput !== captcha) newErrors.captcha = 'Captcha tidak valid';
 
     return newErrors;
   };
@@ -88,8 +89,8 @@ const LoginPage = () => {
     }
 
     toast.success('Login Berhasil!', { theme: 'dark', position: 'top-right' });
+    login(); // Perbarui status login di Context
 
-    // Navigate based on role without using localStorage
     if (formData.email === ADMIN_EMAIL) {
       router.push('/dashboardowner');
     } else {
@@ -102,7 +103,6 @@ const LoginPage = () => {
     toast.success('Kesempatan login berhasil direset', { theme: 'dark', position: 'top-right' });
   };
 
-  // Render nothing during SSR for elements that depend on client-side state
   if (!isClient) {
     return null;
   }

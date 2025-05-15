@@ -1,10 +1,11 @@
+// components/nav-link.tsx
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
 import clsx from 'clsx';
 import { irishGrover } from '@/app/ui/fonts';
 import { toast } from 'react-toastify';
-import { useState, useEffect } from 'react';
+import { useAuth } from '@/app/lib/auth-context';
 
 const links = [
   { name: 'Home', href: '/dashboard' },
@@ -19,13 +20,7 @@ const links = [
 export default function NavLinks() {
   const pathname = usePathname();
   const router = useRouter();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  // Check login status only on the client side
-  useEffect(() => {
-    const loggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    setIsLoggedIn(loggedIn);
-  }, []); // Empty dependency array ensures this runs once on mount
+  const { isLoggedIn, logout } = useAuth();
 
   const handleProductClick = () => {
     if (!isLoggedIn) {
@@ -37,11 +32,7 @@ export default function NavLinks() {
       return;
     }
 
-    const productPages = [
-      '/dashboard/product',
-      '/dashboard/product/product2',
-      '/dashboard/product/product3',
-    ];
+    const productPages = ['/dashboard/product', '/dashboard/product/product2', '/dashboard/product/product3'];
     const randomPage = productPages[Math.floor(Math.random() * productPages.length)];
     router.push(randomPage);
   };
@@ -56,6 +47,12 @@ export default function NavLinks() {
       return;
     }
     router.push(href);
+  };
+
+  const handleLogout = () => {
+    logout();
+    toast.success('Logout Berhasil!', { theme: 'dark', position: 'top-right' });
+    router.push('/auth/login');
   };
 
   return (
@@ -94,6 +91,14 @@ export default function NavLinks() {
             {link.name}
           </button>
         )
+      )}
+      {isLoggedIn && (
+        <button
+          onClick={handleLogout}
+          className="px-3 py-2 text-xl md:text-2xl lg:text-3xl font-medium text-gray-300 hover:text-black"
+        >
+          Logout
+        </button>
       )}
     </div>
   );

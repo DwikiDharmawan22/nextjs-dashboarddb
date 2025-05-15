@@ -1,3 +1,4 @@
+// components/AuthFormWrapper.tsx
 import React, { ReactNode } from 'react';
 import Image from 'next/image';
 
@@ -23,7 +24,7 @@ const AuthFormWrapper = ({ title, children }: AuthFormWrapperProps) => {
       {/* Overlay */}
       <div className="absolute inset-0 bg-opacity-50 rounded-xl z-10 border-8 border-[#A64D79]" />
       {/* Content */}
-      <div className=" relative z-20 bg-opacity-90 rounded-xl p-6 max-w-md mx-auto">
+      <div className="relative z-20 bg-opacity-90 rounded-xl p-6 max-w-md mx-auto">
         {children}
       </div>
     </div>
