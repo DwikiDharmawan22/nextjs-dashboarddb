@@ -1,7 +1,6 @@
 // owner
 // pelanggan
 export interface Customer {
-  id : string;
   username: string;
   email: string;
   phone: string;
