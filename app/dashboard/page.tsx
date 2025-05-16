@@ -41,10 +41,10 @@ export default function HomePage() {
           <h1 className={`${creepster.className} text-6xl md:text-8xl text-[#E92020] font-bold`}>
             KEMILAU <br /> TOPENG
           </h1>
-          <p className={`${creepster.className} text-lg md:text-xl text-[#A64D79] font-semibold`}>
+          <p className={`${creepster.className} text-lg md:text-xl text-[#FFFF] font-semibold`}>
             Explore cultural wealth through every detail of your mask!
           </p>
-          <p className={`${creepster.className} text-lg md:text-xl text-[#A64D79] font-semibold`}>
+          <p className={`${creepster.className} text-lg md:text-xl text-[#FFFF] font-semibold`}>
             NEW ARRIVALS
           </p>
           <button
