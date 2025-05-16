@@ -1,6 +1,6 @@
 'use client';
 
-import { creepster } from '@/app/ui/fonts';
+import { creepster, cormorantGaramond } from '@/app/ui/fonts';
 import Image from 'next/image';
 import React from 'react';
 import StaticRating from '@/components/StaticRating';
@@ -31,7 +31,7 @@ export default function Page() {
         </div>
 
         <div
-          className={`${creepster.className} text-white mb-6 flex flex-col md:flex-row justify-center md:justify-start items-center md:items-start space-y-4 md:space-y-0 md:space-x-6`}
+          className={`${cormorantGaramond.className} text-white mb-6 flex flex-col md:flex-row justify-center md:justify-start items-center md:items-start space-y-4 md:space-y-0 md:space-x-6`}
         >
           {product2.materials.map((material, index) => {
             const Icon = material.icon;
@@ -46,7 +46,7 @@ export default function Page() {
           })}
         </div>
 
-        <div className={`${creepster.className} text-white px-32 flex flex-col items-center md:items-start mb-8`}>
+        <div className={`${cormorantGaramond.className} text-white px-32 flex flex-col items-center md:items-start mb-8`}>
           <p className="text-3xl md:text-4xl font-bold mb-2 mt-2 px-12 py-3 tracking-wider border border-white rounded-xl">
             SHOP NOW - {product2.price}
           </p>
