@@ -1,4 +1,4 @@
-import { Inter, Lusitana, Creepster, Irish_Grover, Montserrat, DM_Sans, Cousine, Doppio_One } from 'next/font/google';
+import { Inter, Lusitana, Creepster, Irish_Grover, Montserrat, DM_Sans, Cousine, Doppio_One, Cormorant_Garamond } from 'next/font/google';
 
 export const inter = Inter({ subsets: ["latin"] });
 
@@ -29,6 +29,10 @@ export const cousine = Cousine({
   weight: ['400', '700'],
 });
 export const doppio_one = Doppio_One({ 
+  subsets: ["latin"],
+  weight: ['400'],
+});
+export const cormorantGaramond = Cormorant_Garamond({ 
   subsets: ["latin"],
   weight: ['400'],
 });

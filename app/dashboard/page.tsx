@@ -26,12 +26,12 @@ export default async function HomePage() {
             KEMILAU <br /> TOPENG
           </h1>
           <p
-            className={`${creepster.className} text-lg md:text-xl text-[#A64D79] font-semibold`}
+            className={`${creepster.className} text-lg md:text-xl text-[#FFFF] font-semibold`}
           >
             Explore cultural wealth through every detail of your mask!
           </p>
           <p
-            className={`${creepster.className} text-lg md:text-xl text-[#A64D79] font-semibold`}
+            className={`${creepster.className} text-lg md:text-xl text-[#FFFF] font-semibold`}
           >
             NEW ARRIVALS
           </p>
