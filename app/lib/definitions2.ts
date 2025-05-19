@@ -101,6 +101,7 @@ export interface TeamMember {
 
 // Shop
 export interface ShopProduct {
+  id : string;
   image: string;
   name: string;
   width: number;
