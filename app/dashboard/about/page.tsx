@@ -1,11 +1,11 @@
-'use client';
-
 import Image from 'next/image';
 import { creepster, irishGrover } from '@/app/ui/fonts';
 import { TeamMember } from '@/app/lib/definitions2';
-import { teamMembers } from '@/app/lib/data2';
+import { fetchTeamMembers } from '@/app/lib/data2';
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const teamMembers = await fetchTeamMembers(); // Fetch data on the server
+
   return (
     <div className="min-h-screen text-white px-6 py-12">
       <div className="flex flex-col md:flex-row justify-center items-center md:items-start gap-10 px-6">
@@ -36,7 +36,7 @@ export default function AboutPage() {
               key={index}
               image={member.image}
               name={member.name}
-              desc={member.desc}
+              description={member.description} // Use `description` to match `TeamMember` interface
             />
           ))}
         </div>
@@ -54,7 +54,7 @@ export default function AboutPage() {
   );
 }
 
-function Team({ image, name, desc }: TeamMember) {
+function Team({ image, name, description }: TeamMember) {
   return (
     <div
       className="relative bg-[#A64D79] p-4 rounded-xl shadow-2xl w-[250px] h-[420px] flex flex-col items-center justify-center overflow-hidden"
@@ -68,7 +68,7 @@ function Team({ image, name, desc }: TeamMember) {
       <div className="w-full relative z-10 flex flex-col items-center justify-center">
         <Image src={image} width={200} height={200} className="rounded-full object-cover mb-2" alt={name} />
         <h3 className={`${irishGrover.className} mt-2 text-lg font-semibold text-white`}>{name}</h3>
-        <p className={`${irishGrover.className} text-base mt-1 text-white text-center`}>{desc}</p>
+        <p className={`${irishGrover.className} text-base mt-1 text-white text-center`}>{description}</p>
       </div>
     </div>
   );

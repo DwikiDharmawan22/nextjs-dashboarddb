@@ -1,4 +1,3 @@
-// app/auth/login/page.tsx
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -10,8 +9,17 @@ import dynamic from 'next/dynamic';
 import AuthFormWrapper from '@/components/AuthFormWrapper';
 import { doppio_one } from '@/app/ui/fonts';
 import { LoginFormData, ErrorObject } from '@/app/lib/definitions2';
-import { VALID_EMAIL, VALID_PASSWORD, ADMIN_EMAIL, ADMIN_PASSWORD, generateRandomCaptcha } from '@/app/lib/data2';
 import { useAuth } from '@/app/lib/auth-context';
+
+// Client-side captcha generation
+const generateRandomCaptcha = () => {
+  const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+  let captcha = '';
+  for (let i = 0; i < 6; i++) {
+    captcha += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return captcha;
+};
 
 const SocialAuth = dynamic(() => import('@/components/SocialAuth'), {
   ssr: false,
@@ -49,14 +57,10 @@ const LoginPage = () => {
   const validateForm = (): ErrorObject => {
     const newErrors: ErrorObject = {};
     if (!formData.email.trim()) newErrors.email = 'Email tidak boleh kosong';
-    else if (formData.email !== VALID_EMAIL && formData.email !== ADMIN_EMAIL) newErrors.email = 'Email tidak sesuai';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
+      newErrors.email = 'Format email tidak valid';
 
     if (!formData.password.trim()) newErrors.password = 'Password tidak boleh kosong';
-    else if (
-      (formData.email === VALID_EMAIL && formData.password !== VALID_PASSWORD) ||
-      (formData.email === ADMIN_EMAIL && formData.password !== ADMIN_PASSWORD)
-    )
-      newErrors.password = 'Password tidak sesuai';
 
     if (formData.captchaInput !== captcha) newErrors.captcha = 'Captcha tidak valid';
 
@@ -69,7 +73,7 @@ const LoginPage = () => {
     setErrors((prev) => ({ ...prev, [name]: undefined }));
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const newErrors = validateForm();
     if (Object.keys(newErrors).length > 0) {
@@ -88,13 +92,44 @@ const LoginPage = () => {
       return;
     }
 
-    toast.success('Login Berhasil!', { theme: 'dark', position: 'top-right' });
-    login(); // Perbarui status login di Context
+    try {
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
 
-    if (formData.email === ADMIN_EMAIL) {
-      router.push('/dashboardowner');
-    } else {
-      router.push('/dashboard');
+      const data = await response.json();
+      if (!response.ok) {
+        setErrors({ email: data.error });
+        if (loginAttempts > 0) {
+          setLoginAttempts((prev) => Math.max(0, prev - 1));
+          if (loginAttempts - 1 > 0) {
+            toast.error(`Login Gagal! Sisa kesempatan: ${Math.max(0, loginAttempts - 1)}`, {
+              theme: 'dark',
+              position: 'top-right',
+            });
+          } else {
+            toast.error('Kesempatan login habis!', { theme: 'dark', position: 'top-right' });
+          }
+        }
+        return;
+      }
+
+      toast.success('Login Berhasil!', { theme: 'dark', position: 'top-right' });
+      login(); // Update login status in Context
+
+      if (data.role === 'admin') {
+        router.push('/dashboardowner');
+      } else {
+        router.push('/dashboard');
+      }
+    } catch (error) {
+      setErrors({ email: 'Gagal login' });
+      toast.error('Gagal login!', { theme: 'dark', position: 'top-right' });
     }
   };
 
@@ -228,4 +263,4 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage
+export default LoginPage;

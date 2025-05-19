@@ -3,7 +3,6 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { cousine, creepster } from '@/app/ui/fonts';
 import { Customer, FormData } from '@/app/lib/definitions2';
-import { loadCustomers, saveCustomers } from '@/app/lib/data2';
 
 export default function Page() {
   const router = useRouter();
@@ -20,10 +19,39 @@ export default function Page() {
     phone: '',
   });
 
+  // Memuat data pelanggan saat komponen dimuat
   useEffect(() => {
-    setCustomers(loadCustomers());
+    const loadCustomers = async () => {
+      try {
+        const response = await fetch('/api/customers');
+        if (!response.ok) throw new Error('Gagal memuat pelanggan');
+        const data = await response.json();
+        setCustomers(data);
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Gagal memuat data pelanggan');
+      }
+    };
+    loadCustomers();
   }, []);
 
+  // Menyimpan data pelanggan ke API
+  const handleSaveCustomers = async (updatedCustomers: Customer[]) => {
+    try {
+      const response = await fetch('/api/customers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedCustomers),
+      });
+      if (!response.ok) throw new Error('Gagal menyimpan pelanggan');
+      setCustomers(updatedCustomers);
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Gagal menyimpan data pelanggan');
+    }
+  };
+
+  // Filter pelanggan berdasarkan pencarian
   const filteredCustomers = customers.filter(
     (customer) =>
       customer.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -34,37 +62,42 @@ export default function Page() {
       )
   );
 
+  // Pagination
   const totalPages = Math.ceil(filteredCustomers.length / Number(entriesPerPage));
   const paginatedCustomers = filteredCustomers.slice(
     (currentPage - 1) * Number(entriesPerPage),
     currentPage * Number(entriesPerPage)
   );
 
+  // Handler untuk pencarian
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
     setCurrentPage(1);
   };
 
+  // Handler untuk mengubah jumlah entri per halaman
   const handleEntriesChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setEntriesPerPage(e.target.value);
     setCurrentPage(1);
   };
 
+  // Handler untuk mengubah halaman
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
     }
   };
 
+  // Handler untuk menghapus pelanggan
   const handleDelete = (username: string) => {
     const updatedCustomers = customers.filter((customer) => customer.username !== username);
-    setCustomers(updatedCustomers);
-    saveCustomers(updatedCustomers);
+    handleSaveCustomers(updatedCustomers);
     if (paginatedCustomers.length === 1 && currentPage > 1) {
       setCurrentPage(currentPage - 1);
     }
   };
 
+  // Membuka modal untuk tambah/edit
   const openModal = (mode: 'add' | 'edit', customer: Customer | null = null) => {
     setModalMode(mode);
     setCurrentCustomer(customer);
@@ -84,6 +117,7 @@ export default function Page() {
     setIsModalOpen(true);
   };
 
+  // Menutup modal
   const closeModal = () => {
     setIsModalOpen(false);
     setCurrentCustomer(null);
@@ -94,11 +128,13 @@ export default function Page() {
     });
   };
 
+  // Handler untuk perubahan input form
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Handler untuk submit form
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const newCustomer: Customer = {
@@ -108,6 +144,7 @@ export default function Page() {
       transactions: modalMode === 'edit' && currentCustomer ? currentCustomer.transactions : [],
     };
 
+    // Validasi username unik
     if (
       modalMode === 'add' ||
       (modalMode === 'edit' && formData.username !== currentCustomer?.username)
@@ -121,6 +158,7 @@ export default function Page() {
       }
     }
 
+    // Update atau tambah pelanggan
     let updatedCustomers: Customer[];
     if (modalMode === 'edit' && currentCustomer) {
       updatedCustomers = customers.map((customer) =>
@@ -130,14 +168,15 @@ export default function Page() {
       updatedCustomers = [...customers, newCustomer];
     }
 
-    setCustomers(updatedCustomers);
-    saveCustomers(updatedCustomers);
+    handleSaveCustomers(updatedCustomers);
     closeModal();
   };
 
   return (
     <div className="min-h-screen text-white p-4" style={{ backgroundColor: '#6A1E55' }}>
-      <h1 className={`text-6xl text-white font-bold flex justify-center items-center ${creepster.className}`}>
+      <h1
+        className={`text-6xl text-white font-bold flex justify-center items-center ${creepster.className}`}
+      >
         DATA PELANGGAN
       </h1>
 
@@ -173,7 +212,9 @@ export default function Page() {
         </div>
       </div>
 
-      <div className={`flex justify-center items-center text-2xl bg-white text-black rounded-lg overflow-hidden ${cousine.className}`}>
+      <div
+        className={`flex justify-center items-center text-2xl bg-white text-black rounded-lg overflow-hidden ${cousine.className}`}
+      >
         <table className="w-full">
           <thead>
             <tr className="bg-[#FFE1F9]">
@@ -280,7 +321,9 @@ export default function Page() {
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className={`bg-[#FFE1F9] p-6 rounded-lg w-1/3 ${cousine.className}`}>
-            <h2 className={`text-4xl text-[#6A1E55] mb-6 text-center ${cousine.className}`}>
+            <h2
+              className={`text-4xl text-[#6A1E55] mb-6 text-center ${cousine.className}`}
+            >
               {modalMode === 'add' ? 'Tambah Data Pelanggan' : 'Edit Data Pelanggan'}
             </h2>
             <form onSubmit={handleFormSubmit} className="space-y-4">

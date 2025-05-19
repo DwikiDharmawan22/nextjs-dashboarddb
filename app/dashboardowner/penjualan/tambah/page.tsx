@@ -1,9 +1,8 @@
 'use client';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { cousine } from '@/app/ui/fonts';
 import { FormData2, Product, Transaction, AvailableProduct } from '@/app/lib/definitions2';
-import { saveTransaction, availableProducts } from '@/app/lib/data2';
 
 export default function AddSalesPage() {
   const router = useRouter();
@@ -23,11 +22,25 @@ export default function AddSalesPage() {
     price: 0,
     subtotal: 0,
   });
+  const [availableProducts, setAvailableProducts] = useState<AvailableProduct[]>([]);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [isEditPopupOpen, setIsEditPopupOpen] = useState(false);
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [isSuccessPopupOpen, setIsSuccessPopupOpen] = useState(false);
   const [formattedPayment, setFormattedPayment] = useState<string>('');
+
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const response = await fetch('/api/products');
+        const data = await response.json();
+        setAvailableProducts(data);
+      } catch (error) {
+        console.error('Failed to load products:', error);
+      }
+    };
+    loadProducts();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -88,7 +101,7 @@ export default function AddSalesPage() {
     setEditIndex(null);
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (formData.products.length === 0) {
       alert('Tambahkan setidaknya satu produk sebelum membayar.');
@@ -109,17 +122,25 @@ export default function AddSalesPage() {
     const newTransaction: Transaction = {
       id: transactionId,
       date: formattedDate,
-      totalPrice: `Rp${formData.totalPayment.toLocaleString('id-ID')},00`,
+      totalPrice: formData.totalPayment,
       username: formData.customer,
       product: productString,
     };
 
     try {
-      saveTransaction(newTransaction);
-      setIsSuccessPopupOpen(true);
+      const response = await fetch('/api/transactions/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newTransaction),
+      });
+      if (response.ok) {
+        setIsSuccessPopupOpen(true);
+      } else {
+        alert('Gagal menyimpan transaksi.');
+      }
     } catch (error) {
-      alert('Gagal menyimpan transaksi. Pastikan localStorage tersedia.');
-      return;
+      alert('Gagal menyimpan transaksi. Silakan coba lagi.');
+      console.error('Error:', error);
     }
   };
 

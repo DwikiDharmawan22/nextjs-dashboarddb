@@ -4,7 +4,6 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect, useMemo } from 'react';
 import { cousine, creepster } from '@/app/ui/fonts';
 import { SaleProduct, EditForm } from '@/app/lib/definitions2';
-import { loadProducts, saveProducts } from '@/app/lib/data2';
 
 export default function Page() {
   const router = useRouter();
@@ -19,7 +18,9 @@ export default function Page() {
 
   useEffect(() => {
     setIsClient(true);
-    setProducts(loadProducts());
+    fetch('/api/products')
+      .then((res) => res.json())
+      .then((data) => setProducts(data));
   }, []);
 
   const filteredProducts = useMemo(() => {
@@ -46,11 +47,15 @@ export default function Page() {
     setCurrentPage(1);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this product?')) {
       const updatedProducts = products.filter((product) => product.id !== id);
       setProducts(updatedProducts);
-      saveProducts(updatedProducts);
+      await fetch('/api/products', {
+        method: 'POST',
+        body: JSON.stringify(updatedProducts),
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
   };
 
@@ -58,20 +63,24 @@ export default function Page() {
     const productToEdit = products.find((product) => product.id === id);
     if (productToEdit) {
       setSelectedProduct(productToEdit);
-      setEditForm({ name: productToEdit.name, price: productToEdit.price });
+      setEditForm({ name: productToEdit.name, price: productToEdit.price.toString() });
       setIsModalOpen(true);
     }
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (selectedProduct) {
       const updatedProducts = products.map((product) =>
         product.id === selectedProduct.id
-          ? { ...product, name: editForm.name, price: editForm.price }
+          ? { ...product, name: editForm.name, price: Number(editForm.price) }
           : product
       );
       setProducts(updatedProducts);
-      saveProducts(updatedProducts);
+      await fetch('/api/products', {
+        method: 'POST',
+        body: JSON.stringify(updatedProducts),
+        headers: { 'Content-Type': 'application/json' },
+      });
       setIsModalOpen(false);
     }
   };

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
@@ -8,7 +8,20 @@ import { toast } from 'react-toastify';
 import AuthFormWrapper from '@/components/AuthFormWrapper';
 import { doppio_one } from '@/app/ui/fonts';
 import { ForgotPasswordFormData, ErrorObject } from '@/app/lib/definitions2';
-import { VALID_EMAIL1, ADMIN_EMAIL1, calculatePasswordStrength } from '@/app/lib/data2';
+
+// Client-side password strength calculation
+const calculatePasswordStrength = (
+  password: string,
+  setPasswordStrength: (strength: number) => void
+) => {
+  let strength = 0;
+  if (password.length >= 8) strength += 20;
+  if (/[A-Z]/.test(password)) strength += 20;
+  if (/[a-z]/.test(password)) strength += 20;
+  if (/[0-9]/.test(password)) strength += 20;
+  if (/[^A-Za-z0-9]/.test(password)) strength += 20;
+  setPasswordStrength(Math.min(strength, 100));
+};
 
 const ForgotPasswordPage = () => {
   const router = useRouter();
@@ -25,8 +38,8 @@ const ForgotPasswordPage = () => {
   const validateForm = (): ErrorObject => {
     const newErrors: ErrorObject = {};
     if (!formData.email.trim()) newErrors.email = 'Email tidak boleh kosong';
-    else if (formData.email !== VALID_EMAIL1 && formData.email !== ADMIN_EMAIL1)
-      newErrors.email = 'Email tidak terdaftar';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
+      newErrors.email = 'Format email tidak valid';
 
     if (!formData.newPassword.trim()) newErrors.newPassword = 'Password baru tidak boleh kosong';
     else if (formData.newPassword.length < 8) newErrors.newPassword = 'Password minimal 8 karakter';
@@ -47,7 +60,7 @@ const ForgotPasswordPage = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const newErrors = validateForm();
     if (Object.keys(newErrors).length > 0) {
@@ -56,8 +69,28 @@ const ForgotPasswordPage = () => {
       return;
     }
 
-    toast.success('Password berhasil direset!', { theme: 'dark', position: 'top-right' });
-    router.push('/auth/login');
+    try {
+      const response = await fetch('/api/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email,
+          newPassword: formData.newPassword,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        setErrors({ email: data.error });
+        toast.error(data.error, { theme: 'dark', position: 'top-right' });
+        return;
+      }
+
+      toast.success('Password berhasil direset!', { theme: 'dark', position: 'top-right' });
+      router.push('/auth/login');
+    } catch (error) {
+      toast.error('Gagal mereset password!', { theme: 'dark', position: 'top-right' });
+    }
   };
 
   return (
@@ -66,7 +99,9 @@ const ForgotPasswordPage = () => {
         <AuthFormWrapper>
           <div className="bg-[#D29BC7] bg-opacity-90 p-8 rounded-[48px] shadow-lg w-full max-w-4xl mx-auto">
             <div className="flex flex-col items-center mb-4">
-              <h2 className={`${doppio_one.className} text-xl font-semibold text-[#6A1E55]`}>Lupa Password</h2>
+              <h2 className={`${doppio_one.className} text-xl font-semibold text-[#6A1E55]`}>
+                Lupa Password
+              </h2>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4 w-full">
@@ -82,7 +117,7 @@ const ForgotPasswordPage = () => {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className={`${doppio_one.className} w-full px-4 py-2 rounded-lg bg-[#D29BC7] bg-opacity-90 border border-gray-300 focus:ring-2 focus:ring-pink-300 focus:outline-none transition-colors placeholder-white`}
+                  className={`${doppio_one.className} w-full px-4 py-2 rounded-lg bg-[#D29BC7] bg-opacity-90 border border-gray-300 focus:ring-2 focus:ring-pink-300 focus:outline-none transition-colors placeholder-white text-[#6A1E55]`}
                   placeholder="Masukkan email"
                 />
                 {errors.email && (
@@ -104,7 +139,7 @@ const ForgotPasswordPage = () => {
                     name="newPassword"
                     value={formData.newPassword}
                     onChange={handleChange}
-                    className={`${doppio_one.className} w-full px-4 py-2 rounded-lg bg-[#D29BC7] bg-opacity-90 border border-gray-300 focus:ring-2 focus:ring-pink-300 focus:outline-none transition-colors placeholder-white`}
+                    className={`${doppio_one.className} w-full px-4 py-2 rounded-lg bg-[#D29BC7] bg-opacity-90 border border-gray-300 focus:ring-2 focus:ring-pink-300 focus:outline-none transition-colors placeholder-white text-[#6A1E55]`}
                     placeholder="Masukkan password baru"
                   />
                   <button
@@ -118,9 +153,7 @@ const ForgotPasswordPage = () => {
                 {errors.newPassword && (
                   <p className={`${doppio_one.className} text-red-500 text-sm`}>{errors.newPassword}</p>
                 )}
-                <div className="text-sm text-[#A64D79] mt-1">
-                  Kekuatan: {passwordStrength}%
-                </div>
+                <div className="text-sm text-[#A64D79] mt-1">Kekuatan: {passwordStrength}%</div>
               </div>
 
               <div className="space-y-1">
@@ -137,7 +170,7 @@ const ForgotPasswordPage = () => {
                     name="confirmPassword"
                     value={formData.confirmPassword}
                     onChange={handleChange}
-                    className={`${doppio_one.className} w-full px-4 py-2 rounded-lg bg-[#D29BC7] bg-opacity-90 border border-gray-300 focus:ring-2 focus:ring-pink-300 focus:outline-none transition-colors placeholder-white`}
+                    className={`${doppio_one.className} w-full px-4 py-2 rounded-lg bg-[#D29BC7] bg-opacity-90 border border-gray-300 focus:ring-2 focus:ring-pink-300 focus:outline-none transition-colors placeholder-white text-[#6A1E55]`}
                     placeholder="Masukkan konfirmasi password baru"
                   />
                   <button

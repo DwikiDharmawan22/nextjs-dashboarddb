@@ -1,11 +1,18 @@
-'use client';
-
 import { irishGrover } from '@/app/ui/fonts';
 import { Contact } from '@/app/lib/definitions2';
-import { contactData } from '@/app/lib/data2';
 import { FaMapMarkerAlt, FaPhoneAlt, FaGlobe, FaFacebook, FaPinterest, FaWhatsapp, FaInstagram } from 'react-icons/fa';
 
-export default function ContactPage() {
+async function fetchContactData(): Promise<Contact> {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+  const res = await fetch(`${baseUrl}/api/contact`, { cache: 'no-store' });
+  if (!res.ok) {
+    throw new Error('Failed to fetch contact data');
+  }
+  return res.json();
+}
+
+export default async function ContactPage() {
+  const contactData = await fetchContactData();
   return (
     <div className="min-h-full bg-gradient-to-b text-white overflow-x-hidden">
       <div className="px-6 py-8">
@@ -26,9 +33,7 @@ export default function ContactPage() {
             <div className={`${irishGrover.className} space-y-4 text-white/90 text-lg`}>
               <div className="flex items-center justify-center gap-4">
                 <FaMapMarkerAlt className="text-2xl mt-1" />
-                <p>
-                  {contactData.location}
-                </p>
+                <p>{contactData.location}</p>
               </div>
               <div className="flex items-center justify-center gap-4">
                 <FaPhoneAlt className="text-2xl" />

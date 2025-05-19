@@ -386,7 +386,7 @@
 //   },
 // ];
 
-// //contact
+//contact
 // import { Contact } from '@/app/lib/definitions2';
 
 // export const contactData: Contact = {
@@ -395,7 +395,7 @@
 //   website: 'www.uajy.ac.id',
 // };
 
-// //login
+//login
 // export const VALID_EMAIL = 'user123';
 // export const VALID_PASSWORD = '12345';
 // export const ADMIN_EMAIL = 'admin123';

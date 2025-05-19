@@ -3,7 +3,6 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { cousine, creepster } from '@/app/ui/fonts';
 import { Transaction } from '@/app/lib/definitions2';
-import { loadTransactions } from '@/app/lib/data2';
 
 export default function Page() {
   const router = useRouter();
@@ -15,12 +14,30 @@ export default function Page() {
 
   useEffect(() => {
     setIsClient(true);
-    setTransactions(loadTransactions());
+    const loadData = async () => {
+      try {
+        const response = await fetch('/api/transactions');
+        const data = await response.json();
+        setTransactions(data);
+      } catch (error) {
+        console.error('Failed to load transactions:', error);
+      }
+    };
+    loadData();
   }, []);
 
   useEffect(() => {
     const handleRouteChange = () => {
-      setTransactions(loadTransactions());
+      const loadData = async () => {
+        try {
+          const response = await fetch('/api/transactions');
+          const data = await response.json();
+          setTransactions(data);
+        } catch (error) {
+          console.error('Failed to load transactions:', error);
+        }
+      };
+      loadData();
     };
     window.addEventListener('focus', handleRouteChange);
     return () => {
@@ -38,12 +55,6 @@ export default function Page() {
     (currentPage - 1) * Number(entriesPerPage),
     currentPage * Number(entriesPerPage)
   );
-
-  useEffect(() => {
-    console.log('Entries per page:', entriesPerPage);
-    console.log('Filtered transactions:', filteredTransactions.length);
-    console.log('Paginated transactions:', paginatedTransactions.length);
-  }, [entriesPerPage, filteredTransactions, paginatedTransactions]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -128,7 +139,7 @@ export default function Page() {
                 <tr key={transaction.id} className="border-t text-[#6A1E55]">
                   <td className="p-2">{transaction.id}</td>
                   <td className="p-2">{transaction.date}</td>
-                  <td className="p-2">{transaction.totalPrice}</td>
+                  <td className="p-2">{transaction.totalprice}</td>
                   <td className="p-2">{transaction.username}</td>
                   <td className="p-2">{transaction.product}</td>
                 </tr>

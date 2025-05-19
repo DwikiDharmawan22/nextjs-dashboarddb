@@ -3,9 +3,20 @@
 import Image from 'next/image';
 import { irishGrover } from '@/app/ui/fonts';
 import { blogProduct } from '@/app/lib/definitions2';
-import { blogproducts } from '@/app/lib/data2';
+import { useState, useEffect } from 'react';
 
 export default function AboutPage() {
+  const [blogproducts, setBlogproducts] = useState<blogProduct[]>([]);
+
+  useEffect(() => {
+    async function fetchProducts() {
+      const response = await fetch('/api/blog-products');
+      const data = await response.json();
+      setBlogproducts(data);
+    }
+    fetchProducts();
+  }, []);
+
   return (
     <div className="mt-4 p-4 mx-auto max-w-screen-2xl">
       <div className="flex flex-col md:flex-row gap-8 mb-2 items-center md:items-start">
@@ -18,7 +29,6 @@ export default function AboutPage() {
             alt="Kemilau Topeng Logo"
           />
         </div>
-
         <div className="w-full mx-auto text-center mt-8">
           <h1 className={`${irishGrover.className} text-7xl font-bold mb-4 text-white`}>EXPLORE YOU MASK</h1>
           <p className={`${irishGrover.className} text-3xl text-white flex items-center justify-center`}>
