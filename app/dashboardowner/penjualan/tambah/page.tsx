@@ -122,7 +122,7 @@ export default function AddSalesPage() {
     const newTransaction: Transaction = {
       id: transactionId,
       date: formattedDate,
-      totalPrice: formData.totalPayment,
+      totalprice: formData.totalPayment,
       username: formData.customer,
       product: productString,
     };
