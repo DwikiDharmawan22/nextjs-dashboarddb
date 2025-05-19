@@ -3,14 +3,14 @@
 import { useEffect, useState } from 'react';
 import { Product1 } from '@/app/lib/definitions2';
 import Image from 'next/image';
-import { creepster, cormorantGaramond } from '@/app/ui/fonts';
+import { creepster } from '@/app/ui/fonts';
 import StaticRating from '@/components/StaticRating';
 import { CubeIcon, StarIcon, PaintBrushIcon } from '@heroicons/react/24/solid';
 
 // Map nama material ke ikon di sisi klien
 const iconMap: { [key: string]: React.ComponentType<any> } = {
   'selected mahogany wood': CubeIcon,
-  'dumling paper': StarIcon, // Asumsi: "Dumling Paper" adalah "Dumpling Paper"
+  'dumling paper': StarIcon,
   'highly pigmented natural paint': PaintBrushIcon,
 };
 
@@ -21,12 +21,11 @@ export default function Page() {
   useEffect(() => {
     async function fetchProduct() {
       try {
-        const response = await fetch('/api/product?id=2'); // Hardcode ID 2
+        const response = await fetch('/api/product?id=2');
         if (!response.ok) {
           throw new Error('Failed to fetch product');
         }
         const data = await response.json();
-        // Map ikon ke materials di sisi klien
         data.materials = data.materials.map((material: { name: string }) => ({
           ...material,
           icon: iconMap[material.name.toLowerCase()],
@@ -55,9 +54,12 @@ export default function Page() {
           <Image
             src={product.image}
             alt={product.name}
-            height={500}
-            width={500}
+            width={450} // Sesuaikan dengan lebar kontainer
+            height={650} // Sesuaikan dengan tinggi kontainer
             className="object-cover rounded-lg"
+            onError={(e) => {
+              e.currentTarget.src = '/images/default.png'; // Ganti dengan path gambar default jika ada
+            }}
           />
         </div>
       </div>
@@ -75,7 +77,7 @@ export default function Page() {
         </div>
 
         <div
-          className={`${cormorantGaramond.className} text-white mb-6 flex flex-col md:flex-row justify-center md:justify-start items-center md:items-start space-y-4 md:space-y-0 md:space-x-6`}
+          className={`${creepster.className} text-white mb-6 flex flex-col md:flex-row justify-center md:justify-start items-center md:items-start space-y-4 md:space-y-0 md:space-x-6`}
         >
           {product.materials.map((material, index) => {
             const Icon = material.icon;
@@ -91,7 +93,7 @@ export default function Page() {
         </div>
 
         <div
-          className={`${cormorantGaramond.className} text-white px-32 flex flex-col items-center md:items-start mb-8`}
+          className={`${creepster.className} text-white px-32 flex flex-col items-center md:items-start mb-8`}
         >
           <p className="text-3xl md:text-4xl font-bold mb-2 mt-2 px-12 py-3 tracking-wider border border-white rounded-xl">
             SHOP NOW - Rp {product.price.toLocaleString('id-ID')}
