@@ -1,8 +1,11 @@
 'use client';
+
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { cousine, creepster } from '@/app/ui/fonts';
 import { Transaction } from '@/app/lib/definitions2';
+import Cards from '@/app/ui/dashboard/cards2';
+import Skeleton from '@/app/ui/skeletons2';
 
 export default function Page() {
   const router = useRouter();
@@ -11,16 +14,20 @@ export default function Page() {
   const [entriesPerPage, setEntriesPerPage] = useState<string>('4');
   const [currentPage, setCurrentPage] = useState(1);
   const [isClient, setIsClient] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     setIsClient(true);
     const loadData = async () => {
       try {
+        setIsLoading(true);
         const response = await fetch('/api/transactions');
         const data = await response.json();
         setTransactions(data);
       } catch (error) {
         console.error('Failed to load transactions:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
     loadData();
@@ -30,11 +37,14 @@ export default function Page() {
     const handleRouteChange = () => {
       const loadData = async () => {
         try {
+          setIsLoading(true);
           const response = await fetch('/api/transactions');
           const data = await response.json();
           setTransactions(data);
         } catch (error) {
           console.error('Failed to load transactions:', error);
+        } finally {
+          setIsLoading(false);
         }
       };
       loadData();
@@ -127,65 +137,59 @@ export default function Page() {
               <th className="p-4 text-left text-3xl text-[#6A1E55]">NAMA PRODUK</th>
             </tr>
           </thead>
-          <tbody>
-            {paginatedTransactions.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="p-4 text-center text-[#6A1E55]">
-                  Tidak ada transaksi
-                </td>
-              </tr>
-            ) : (
-              paginatedTransactions.map((transaction) => (
-                <tr key={transaction.id} className="border-t text-[#6A1E55]">
-                  <td className="p-2">{transaction.id}</td>
-                  <td className="p-2">{transaction.date}</td>
-                  <td className="p-2">{transaction.totalprice}</td>
-                  <td className="p-2">{transaction.username}</td>
-                  <td className="p-2">{transaction.product}</td>
-                </tr>
-              ))
-            )}
-          </tbody>
+          <Cards
+            type="transaction"
+            transactions={paginatedTransactions}
+            loading={isLoading}
+          />
         </table>
       </div>
 
-      <div className={`flex flex-col items-center mt-16 ${cousine.className}`}>
-        <div className="flex gap-2 mb-2">
-          <button
-            type="button"
-            className={`bg-white text-black px-2 py-1 rounded ${cousine.className}`}
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-          >
-            {'<'}
-          </button>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+      {isLoading ? (
+        <Skeleton type="pagination" />
+      ) : (
+        <div className={`flex flex-col items-center mt-16 ${cousine.className}`}>
+          <div className="flex gap-2 mb-2">
             <button
-              key={page}
               type="button"
-              className={`${
-                currentPage === page ? 'bg-[#A64D79] text-white' : 'bg-white text-black'
-              } px-2 py-1 rounded ${cousine.className}`}
-              onClick={() => handlePageChange(page)}
+              className={`bg-white text-black px-2 py-1 rounded ${cousine.className} ${
+                currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
             >
-              {page}
+              {'<'}
             </button>
-          ))}
-          <button
-            type="button"
-            className={`bg-white text-black px-2 py-1 rounded ${cousine.className}`}
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-          >
-            {'>'}
-          </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                type="button"
+                className={`${
+                  currentPage === page ? 'bg-[#A64D79] text-white' : 'bg-white text-black'
+                } px-2 py-1 rounded ${cousine.className}`}
+                onClick={() => handlePageChange(page)}
+              >
+                {page}
+              </button>
+            ))}
+            <button
+              type="button"
+              className={`bg-white text-black px-2 py-1 rounded ${cousine.className} ${
+                currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            >
+              {'>'}
+            </button>
+          </div>
+          <span>
+            SHOWING {(currentPage - 1) * Number(entriesPerPage) + 1} TO{' '}
+            {Math.min(currentPage * Number(entriesPerPage), filteredTransactions.length)} OF{' '}
+            {filteredTransactions.length} RESULTS
+          </span>
         </div>
-        <span>
-          SHOWING {(currentPage - 1) * Number(entriesPerPage) + 1} TO{' '}
-          {Math.min(currentPage * Number(entriesPerPage), filteredTransactions.length)} OF{' '}
-          {filteredTransactions.length} RESULTS
-        </span>
-      </div>
+      )}
 
       <button
         type="button"
