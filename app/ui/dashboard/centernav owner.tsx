@@ -1,4 +1,5 @@
 'use client';
+
 import Link from 'next/link';
 import NavLinksOwner from '@/app/ui/dashboard/nav-links owner';
 import Image from 'next/image';
@@ -6,13 +7,16 @@ import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import { irishGrover } from '@/app/ui/fonts';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'react-toastify';
+import { useAuth } from '@/app/lib/auth-context';
+import clsx from 'clsx';
 
 export default function CenterNavOwner() {
   const [isOpen, setIsOpen] = useState(false);
   const [showLogoutPopup, setShowLogoutPopup] = useState(false);
-  // Type the ref as HTMLDivElement or null
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
+  const { isLoggedIn } = useAuth();
 
   // Handle clicks outside the dropdown to close it
   useEffect(() => {
@@ -28,9 +32,56 @@ export default function CenterNavOwner() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Handle logout click with event typing
+  // Handle logo click
+  const handleLogoClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (!isLoggedIn) {
+      e.preventDefault();
+      toast.error('Silakan login untuk mengakses navigasi', {
+        theme: 'dark',
+        position: 'top-right',
+      });
+      router.push('/auth/login');
+    }
+  };
+
+  // Handle profile dropdown click
+  const handleDropdownClick = () => {
+    if (!isLoggedIn) {
+      toast.error('Silakan login untuk mengakses profil', {
+        theme: 'dark',
+        position: 'top-right',
+      });
+      router.push('/auth/login');
+      return;
+    }
+    setIsOpen(!isOpen);
+  };
+
+  // Handle profile link click
+  const handleProfileClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (!isLoggedIn) {
+      e.preventDefault();
+      toast.error('Silakan login untuk mengakses profil', {
+        theme: 'dark',
+        position: 'top-right',
+      });
+      router.push('/auth/login');
+      return;
+    }
+    setIsOpen(false);
+  };
+
+  // Handle logout click
   const handleLogoutClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
+    if (!isLoggedIn) {
+      toast.error('Silakan login terlebih dahulu', {
+        theme: 'dark',
+        position: 'top-right',
+      });
+      router.push('/auth/login');
+      return;
+    }
     setShowLogoutPopup(true);
     setIsOpen(false);
   };
@@ -38,7 +89,7 @@ export default function CenterNavOwner() {
   // Confirm logout and navigate
   const confirmLogout = () => {
     setShowLogoutPopup(false);
-    router.push('/');
+    router.push('/auth/login');
   };
 
   // Cancel logout
@@ -50,7 +101,13 @@ export default function CenterNavOwner() {
     <div className="flex items-center justify-between w-full bg-[#A64D79]">
       {/* Logo - Pojok Kiri */}
       <div className="flex-shrink-0 z-50">
-        <Link href="/" className="flex items-center h-20">
+        <Link
+          href="/"
+          onClick={handleLogoClick}
+          className={clsx('flex items-center h-20', {
+            'cursor-not-allowed opacity-50': !isLoggedIn,
+          })}
+        >
           <Image
             src="/logo.png"
             alt="Company Logo"
@@ -70,9 +127,12 @@ export default function CenterNavOwner() {
       {/* Pegawai - Pojok Kanan */}
       <div className={`${irishGrover.className} relative z-50`} ref={dropdownRef}>
         <div
-          className="flex items-center gap-2 p-3 cursor-pointer"
-          onClick={() => setIsOpen(!isOpen)}
-          onMouseEnter={() => setIsOpen(true)}
+          className={clsx('flex items-center gap-2 p-3', {
+            'cursor-pointer': isLoggedIn,
+            'cursor-not-allowed opacity-50': !isLoggedIn,
+          })}
+          onClick={handleDropdownClick}
+          onMouseEnter={() => isLoggedIn && setIsOpen(true)}
         >
           <Image
             src="/dwiki.png"
@@ -89,7 +149,7 @@ export default function CenterNavOwner() {
           />
         </div>
 
-        {isOpen && (
+        {isOpen && isLoggedIn && (
           <div
             className="absolute right-0 w-48 bg-white rounded-md shadow-lg"
             onMouseLeave={() => setIsOpen(false)}
@@ -97,7 +157,7 @@ export default function CenterNavOwner() {
             <Link
               href="/dashboardowner/profile"
               className="block px-4 py-2 text-sm hover:bg-gray-100"
-              onClick={() => setIsOpen(false)}
+              onClick={handleProfileClick}
             >
               Profil
             </Link>
@@ -113,7 +173,7 @@ export default function CenterNavOwner() {
       </div>
 
       {/* Logout Confirmation Popup */}
-      {showLogoutPopup && (
+      {showLogoutPopup && isLoggedIn && (
         <div className="fixed inset-0 flex items-end justify-center bg-white bg-opacity-30 backdrop-blur-sm z-50">
           <div className="bg-white rounded-t-lg shadow-lg w-full p-4">
             <p className="text-center text-lg font-semibold py-4 border-b border-gray-300 uppercase">
