@@ -1,4 +1,3 @@
-// app/dashboardowner/page.tsx
 import { fetchCardData, fetchDashboardData, fetchTopProductToday, fetchTopCustomerThisMonth } from '@/app/lib/data2';
 import ClientDashboard from './client';
 import { ChartData } from '@/app/lib/definitions2';
@@ -23,7 +22,7 @@ export default async function DashboardPage() {
   );
 
   // Fetch card data (metrics)
-  const { numberOfTransactions, totalRevenue, totalOutcome } = await fetchCardData();
+  const { numberOfCustomers, numberOfTransactions, totalRevenue } = await fetchCardData();
 
   // Fetch top product and top customer
   const topProduct = await fetchTopProductToday();
@@ -34,9 +33,9 @@ export default async function DashboardPage() {
       dailyIncomeData={dailyIncomeData}
       monthlyIncomeData={monthlyIncomeData}
       numberOfOrders={numberOfTransactions} // Assuming orders = transactions
+      numberOfCustomers={numberOfCustomers}
       numberOfTransactions={numberOfTransactions}
       totalRevenue={totalRevenue}
-      totalOutcome={totalOutcome}
       topProduct={topProduct}
       topCustomer={topCustomer}
     />

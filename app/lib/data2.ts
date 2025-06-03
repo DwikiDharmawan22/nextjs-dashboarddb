@@ -160,38 +160,53 @@ export async function fetchDashboardData(
   setLoading: (loading: boolean) => void
 ): Promise<void> {
   try {
+    // Generate last 7 days
     const dailyData = await sql`
-      SELECT TO_CHAR(day, 'Day') AS day, SUM(amount) AS total
-      FROM daily_income
-      GROUP BY day
-      ORDER BY day
-      LIMIT 5
+      SELECT 
+        TO_CHAR(date, 'Day') AS day, 
+        SUM(totalPrice) AS total
+      FROM transactions
+      WHERE date >= CURRENT_DATE - INTERVAL '7 days'
+      GROUP BY TO_CHAR(date, 'Day'), date
+      ORDER BY date
     `;
+    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const dailyMap = new Map(dailyData.map(row => [row.day.trim(), Number(row.total) || 0]));
+    const dailyLabels = days.slice(-7).map(day => day);
+    const dailyValues = dailyLabels.map(day => dailyMap.get(day) || 0);
+
     setDailyIncomeData({
-      labels: dailyData.map((row) => row.day.trim()),
+      labels: dailyLabels,
       datasets: [{
-        label: "Pendapatan Harian",
-        data: dailyData.map((row) => Number(row.total) || 0),
-        backgroundColor: "#29CA2E",
-        borderColor: "#29CA2E",
+        label: 'Pendapatan Harian',
+        data: dailyValues,
+        backgroundColor: '#29CA2E',
+        borderColor: '#29CA2E',
         borderWidth: 1,
       }],
     });
 
+    // Generate last 12 months
     const monthlyData = await sql`
-      SELECT month, SUM(amount) AS total
-      FROM monthly_income
-      GROUP BY month
-      ORDER BY month
-      LIMIT 12
+      SELECT 
+        EXTRACT(MONTH FROM date) AS month_num,
+        SUM(totalPrice) AS total
+      FROM transactions
+      WHERE date >= CURRENT_DATE - INTERVAL '12 months'
+      GROUP BY EXTRACT(MONTH FROM date)
+      ORDER BY EXTRACT(MONTH FROM date)
     `;
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+    const monthlyMap = new Map(monthlyData.map(row => [Number(row.month_num), Number(row.total) || 0]));
+    const monthlyValues = months.map((_, i) => monthlyMap.get(i + 1) || 0);
+
     setMonthlyIncomeData({
-      labels: ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des"],
+      labels: months,
       datasets: [{
-        label: "Pendapatan Bulanan",
-        data: monthlyData.map((row) => Number(row.total) || 0),
-        backgroundColor: "#E92020",
-        borderColor: "#E92020",
+        label: 'Pendapatan Bulanan',
+        data: monthlyValues,
+        backgroundColor: '#E92020',
+        borderColor: '#E92020',
         borderWidth: 1,
       }],
     });
@@ -312,7 +327,6 @@ export async function fetchCardData(): Promise<{
   numberOfCustomers: number;
   numberOfTransactions: number;
   totalRevenue: number;
-  totalOutcome: number;
 }> {
   try {
     const customerCountPromise = sql`SELECT COUNT(*) FROM customers`;
@@ -333,7 +347,6 @@ export async function fetchCardData(): Promise<{
       numberOfCustomers,
       numberOfTransactions,
       totalRevenue,
-      totalOutcome: 0, // No expenses table
     };
   } catch (error) {
     console.error('Database Error:', error);
@@ -359,7 +372,6 @@ export async function fetchTopProductToday(): Promise<string> {
   }
 }
 
-// New function: Fetch customer with most transactions this month
 export async function fetchTopCustomerThisMonth(): Promise<string> {
   try {
     const data = await sql`

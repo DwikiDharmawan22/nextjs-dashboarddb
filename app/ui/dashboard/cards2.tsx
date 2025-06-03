@@ -3,18 +3,16 @@
 import Image from 'next/image';
 import {
   ClipboardDocumentIcon,
-  ArrowUpTrayIcon,
   ArrowDownTrayIcon,
-  ArrowsRightLeftIcon,
+  UserGroupIcon,
 } from '@heroicons/react/24/outline';
 import { cousine } from '@/app/ui/fonts';
 import { SaleProduct, Transaction } from '@/app/lib/definitions2';
 
 interface Metrics {
-  numberOfOrders?: number;
-  totalOutcome?: number;
-  totalRevenue?: number;
+  numberOfCustomers?: number;
   numberOfTransactions?: number;
+  totalRevenue?: number;
 }
 
 interface CardsProps {
@@ -39,27 +37,21 @@ export default function Cards({
   if (type === 'metric') {
     const cards = [
       {
-        icon: <ClipboardDocumentIcon className="h-8 w-8" />,
+        icon: <UserGroupIcon className="h-8 w-8" />,
         iconColor: 'text-blue-600',
-        title: 'Total Orders',
-        value: metrics.numberOfOrders,
+        title: 'Jumlah Pelanggan',
+        value: metrics.numberOfCustomers,
       },
       {
-        icon: <ArrowUpTrayIcon className="h-8 w-8" />,
-        iconColor: 'text-red-600',
-        title: 'Outcome',
-        value: metrics.totalOutcome
-          ? new Intl.NumberFormat('id-ID', {
-              style: 'currency',
-              currency: 'IDR',
-              minimumFractionDigits: 0,
-            }).format(metrics.totalOutcome)
-          : undefined,
+        icon: <ClipboardDocumentIcon className="h-8 w-8" />,
+        iconColor: 'text-purple-600',
+        title: 'Total Transaksi',
+        value: metrics.numberOfTransactions,
       },
       {
-        icon: <ArrowDownTrayIcon className="h-8 w-8" />,
+        icon: <ArrowDownTrayIcon className="h-8 w-8" />, // Corrected from Arrow-courswenTrayIcon
         iconColor: 'text-green-600',
-        title: 'Income',
+        title: 'Pendapatan',
         value: metrics.totalRevenue
           ? new Intl.NumberFormat('id-ID', {
               style: 'currency',
@@ -68,18 +60,12 @@ export default function Cards({
             }).format(metrics.totalRevenue)
           : undefined,
       },
-      {
-        icon: <ArrowsRightLeftIcon className="h-8 w-8" />,
-        iconColor: 'text-purple-600',
-        title: 'Total Transaksi',
-        value: metrics.numberOfTransactions,
-      },
     ];
 
     return (
-      <div className={`${cousine.className} grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8`}>
+      <div className={`${cousine.className} grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8`}>
         {loading
-          ? [...Array(4)].map((_, index) => (
+          ? [...Array(3)].map((_, index) => (
               <div
                 key={index}
                 className="bg-[#F091DD] p-6 rounded-xl shadow-sm flex items-center animate-pulse"

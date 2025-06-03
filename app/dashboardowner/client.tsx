@@ -28,9 +28,9 @@ interface ClientDashboardProps {
   dailyIncomeData: ChartData;
   monthlyIncomeData: ChartData;
   numberOfOrders: number;
+  numberOfCustomers: number;
   numberOfTransactions: number;
   totalRevenue: number;
-  totalOutcome: number;
   topProduct: string;
   topCustomer: string;
 }
@@ -39,9 +39,9 @@ export default function ClientDashboard({
   dailyIncomeData,
   monthlyIncomeData,
   numberOfOrders,
+  numberOfCustomers,
   numberOfTransactions,
   totalRevenue,
-  totalOutcome,
   topProduct,
   topCustomer,
 }: ClientDashboardProps) {
@@ -115,10 +115,9 @@ export default function ClientDashboard({
         <Cards
           type="metric"
           metrics={{
-            numberOfOrders,
-            totalOutcome,
-            totalRevenue,
+            numberOfCustomers,
             numberOfTransactions,
+            totalRevenue,
           }}
           loading={false}
         />

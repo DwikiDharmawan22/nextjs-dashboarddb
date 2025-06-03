@@ -72,6 +72,11 @@ export interface ChartData {
     borderWidth: number;
   }[];
 }
+interface Metrics {
+  numberOfCustomers?: number;
+  numberOfTransactions?: number;
+  totalRevenue?: number;
+}
 
 // Profile
 export interface Profile {
