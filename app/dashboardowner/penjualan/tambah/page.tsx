@@ -8,7 +8,7 @@ export default function AddSalesPage() {
   const router = useRouter();
   const [formData, setFormData] = useState<FormData2>({
     date: '22/03/2025',
-    cashier: 'Dwiki',
+    cashier: 'Nama Pegawai',
     customer: 'Nama Pelanggan',
     products: [],
     discount: 0,
@@ -28,6 +28,7 @@ export default function AddSalesPage() {
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [isSuccessPopupOpen, setIsSuccessPopupOpen] = useState(false);
   const [formattedPayment, setFormattedPayment] = useState<string>('');
+  const [formattedDiscount, setFormattedDiscount] = useState<string>('');
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -47,6 +48,20 @@ export default function AddSalesPage() {
     setFormData((prev: FormData2) => ({
       ...prev,
       [name]: name === 'discount' ? Number(value) || 0 : value,
+    }));
+  };
+
+  const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawValue = e.target.value.replace(/[^0-9]/g, '');
+    const discount = rawValue ? Number(rawValue) : 0;
+    if (isNaN(discount)) return;
+
+    const formattedValue = discount.toLocaleString('id-ID');
+    setFormattedDiscount(formattedValue);
+    setFormData((prev: FormData2) => ({
+      ...prev,
+      discount,
+      totalPayment: prev.products.reduce((sum: number, p: Product) => sum + p.subtotal, 0) - discount,
     }));
   };
 
@@ -161,9 +176,10 @@ export default function AddSalesPage() {
   const closeSuccessPopup = () => {
     setIsSuccessPopupOpen(false);
     setFormattedPayment('');
+    setFormattedDiscount('');
     setFormData({
       date: '22/03/2025',
-      cashier: 'Dwiki',
+      cashier: 'Nama Pegawai',
       customer: 'Nama Pelanggan',
       products: [],
       discount: 0,
@@ -228,6 +244,10 @@ export default function AddSalesPage() {
           background: #FFE1F9;
           color: #000000;
         }
+        select.custom-select option:disabled {
+          color: #999999;
+          font-style: italic;
+        }
       `}</style>
       <div className="bg-[#A64D79] p-12 rounded-lg max-w-8xl mx-auto">
         <form onSubmit={handleSubmit}>
@@ -255,6 +275,7 @@ export default function AddSalesPage() {
                     className="px-4 py-2 rounded border border-white bg-[#A64D79] text-white text-lg custom-select"
                     aria-label="Pilih pegawai"
                   >
+                    <option value="Nama Pegawai" disabled>Nama Pegawai</option>
                     <option value="Dwiki">Dwiki</option>
                     <option value="Nana">Nana</option>
                   </select>
@@ -270,8 +291,17 @@ export default function AddSalesPage() {
                     className="px-4 py-2 rounded border border-white bg-[#A64D79] text-white text-lg custom-select"
                     aria-label="Pilih pelanggan"
                   >
-                    <option value="Nama Pelanggan">Nama Pelanggan</option>
+                    <option value="Nama Pelanggan" disabled>Nama Pelanggan</option>
                     <option value="Paijo">Paijo</option>
+                    <option value="Budi">Budi</option>
+                    <option value="Siti">Siti</option>
+                    <option value="Rina">Rina</option>
+                    <option value="Andi">Andi</option>
+                    <option value="Dewi">Dewi</option>
+                    <option value="Joko">Joko</option>
+                    <option value="Lina">Lina</option>
+                    <option value="Tono">Tono</option>
+                    <option value="Mira">Mira</option>
                   </select>
                 </div>
               </div>
@@ -518,15 +548,18 @@ export default function AddSalesPage() {
               </div>
               <div className="mb-4">
                 <label className="block text-xl text-white mb-2 uppercase">Diskon</label>
-                <input
-                  type="number"
-                  name="discount"
-                  value={formData.discount}
-                  onChange={handleInputChange}
-                  className="px-4 py-2 rounded border border-white bg-[#A64D79] text-white text-lg"
-                  placeholder="Diskon Event"
-                  aria-label="Diskon"
-                />
+                <div className="relative w-80">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white text-lg">Rp</span>
+                  <input
+                    type="text"
+                    name="discount"
+                    value={formattedDiscount}
+                    onChange={handleDiscountChange}
+                    className="pl-8 py-2 rounded border border-white bg-[#A64D79] text-white text-lg placeholder-white"
+                    placeholder="0"
+                    aria-label="Diskon"
+                  />
+                </div>
               </div>
               <div>
                 <label className="block text-xl text-white mb-2 uppercase">Total Pembayaran</label>
