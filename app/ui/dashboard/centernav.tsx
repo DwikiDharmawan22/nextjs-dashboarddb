@@ -8,7 +8,7 @@ export default function CenterNav() {
     <div className="flex items-center justify-between w-full px-4 py-2 ">
       {/* Logo - Pojok Kiri */}
       <div className="flex-shrink-0 z-50">
-        <Link href="/" className="flex items-center h-16">
+        <Link href="/dashboard" className="flex items-center h-16">
           <Image
             src="/logo.png"
             alt="Company Logo"

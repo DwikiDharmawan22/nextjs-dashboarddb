@@ -102,7 +102,7 @@ export default function CenterNavOwner() {
       {/* Logo - Pojok Kiri */}
       <div className="flex-shrink-0 z-50">
         <Link
-          href="/"
+          href="/dashboardowner"
           onClick={handleLogoClick}
           className={clsx('flex items-center h-20', {
             'cursor-not-allowed opacity-50': !isLoggedIn,
