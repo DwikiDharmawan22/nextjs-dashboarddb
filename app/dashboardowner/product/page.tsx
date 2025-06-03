@@ -63,16 +63,22 @@ export default function Page() {
 
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this product?')) {
-      const updatedProducts = products.filter((product) => product.id !== id);
-      setProducts(updatedProducts);
       try {
-        await fetch('/api/products', {
-          method: 'POST',
-          body: JSON.stringify(updatedProducts),
+        const response = await fetch('/api/products', {
+          method: 'DELETE',
+          body: JSON.stringify({ id }),
           headers: { 'Content-Type': 'application/json' },
         });
+
+        if (!response.ok) {
+          throw new Error('Failed to delete product from the server');
+        }
+
+        const updatedProducts = products.filter((product) => product.id !== id);
+        setProducts(updatedProducts);
       } catch (error) {
         console.error('Failed to delete product:', error);
+        alert('Failed to delete product. Please try again.');
       }
     }
   };

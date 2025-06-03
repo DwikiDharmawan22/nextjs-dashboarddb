@@ -128,6 +128,18 @@ export async function saveProducts(products: SaleProduct[]): Promise<void> {
   }
 }
 
+export async function deleteProduct(id: string): Promise<void> {
+  try {
+    await sql`
+      DELETE FROM products
+      WHERE id = ${id}
+    `;
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to delete product.');
+  }
+}
+
 export async function fetchAvailableProducts(): Promise<AvailableProduct[]> {
   try {
     const data = await sql<AvailableProduct[]>`
