@@ -13,7 +13,7 @@ export default async function AboutPage() {
       <div className="flex flex-col md:flex-row gap-8 mb-2 items-center md:items-start">
         <div className="w-full md:w-1/2 h-[300px] relative">
           <Image
-            src="/topeng jesica.png"
+            src="/topeng-jesica.png"
             alt="Kemilau Topeng Logo"
             fill
             className="object-contain"

@@ -41,7 +41,7 @@ export default async function HomePage() {
         <div className="mt-4 p-4 mx-auto max-w-screen-2xl">
           <div className="flex flex-col md:flex-row gap-8 mb-2 items-center md:items-start">
             <Image
-              src="/topeng cicilia.png"
+              src="/topeng-cicilia.png"
               width={1000}
               height={1000}
               className="w-full h-auto object-contain"
