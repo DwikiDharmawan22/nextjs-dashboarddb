@@ -1,10 +1,10 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState } from 'react';
 
 type AuthContextType = {
   isLoggedIn: boolean;
-  login: (token: string) => void; // Menambahkan parameter token untuk login
+  login: () => void;
   logout: () => void;
 };
 
@@ -12,31 +12,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isLoading, setIsLoading] = useState(true); // Menambahkan state untuk menangani loading
 
-  // Inisialisasi status autentikasi saat komponen dimuat
-  useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      setIsLoggedIn(true); // Set isLoggedIn ke true jika token ada
-    }
-    setIsLoading(false); // Tandai bahwa inisialisasi selesai
-  }, []);
-
-  const login = (token: string) => {
-    localStorage.setItem('authToken', token); // Simpan token di localStorage
-    setIsLoggedIn(true);
-  };
-
-  const logout = () => {
-    localStorage.removeItem('authToken'); // Hapus token dari localStorage
-    setIsLoggedIn(false);
-  };
-
-  // Jangan render anak sampai inisialisasi selesai
-  if (isLoading) {
-    return null; // Atau bisa diganti dengan loading spinner
-  }
+  const login = () => setIsLoggedIn(true);
+  const logout = () => setIsLoggedIn(false);
 
   return (
     <AuthContext.Provider value={{ isLoggedIn, login, logout }}>

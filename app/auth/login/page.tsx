@@ -11,6 +11,7 @@ import { doppio_one } from '@/app/ui/fonts';
 import { LoginFormData, ErrorObject } from '@/app/lib/definitions2';
 import { useAuth } from '@/app/lib/auth-context';
 
+// Client-side captcha generation
 const generateRandomCaptcha = () => {
   const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
   let captcha = '';
@@ -118,12 +119,8 @@ const LoginPage = () => {
         return;
       }
 
-      if (!data.token) {
-        throw new Error('Token tidak ditemukan dalam respons API');
-      }
-
       toast.success('Login Berhasil!', { theme: 'dark', position: 'top-right' });
-      login(data.token); // Kirim token ke fungsi login
+      login(); // Update login status in Context
 
       if (data.role === 'admin') {
         router.push('/dashboardowner');
