@@ -46,6 +46,7 @@ export interface FormData2 {
 export interface AvailableProduct {
   name: string;
   price: number;
+  id?: string;
 }
 
 // Product
