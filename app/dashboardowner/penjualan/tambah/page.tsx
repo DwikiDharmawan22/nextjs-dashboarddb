@@ -3,13 +3,24 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { cousine } from '@/app/ui/fonts';
 import { FormData2, Product, Transaction, AvailableProduct } from '@/app/lib/definitions2';
+import Select from 'react-select';
 
 export default function AddSalesPage() {
   const router = useRouter();
+
+  // Fungsi untuk memformat tanggal saat ini ke format DD/MM/YYYY
+  const getCurrentDate = () => {
+    return new Date().toLocaleDateString('id-ID', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    }).split('/').join('/');
+  };
+
   const [formData, setFormData] = useState<FormData2>({
-    date: '22/03/2025',
+    date: getCurrentDate(),
     cashier: 'Nama Pegawai',
-    customer: 'Nama Pelanggan',
+    customer: '',
     products: [],
     discount: 0,
     totalPayment: 0,
@@ -30,6 +41,63 @@ export default function AddSalesPage() {
   const [formattedPayment, setFormattedPayment] = useState<string>('');
   const [formattedDiscount, setFormattedDiscount] = useState<string>('');
 
+  // Daftar pelanggan untuk react-select
+  const customers = [
+    { value: 'Paijo', label: 'Paijo' },
+    { value: 'Budi', label: 'Budi' },
+    { value: 'Siti', label: 'Siti' },
+    { value: 'Rina', label: 'Rina' },
+    { value: 'Andi', label: 'Andi' },
+    { value: 'Dewi', label: 'Dewi' },
+    { value: 'Joko', label: 'Joko' },
+    { value: 'Lina', label: 'Lina' },
+    { value: 'Tono', label: 'Tono' },
+    { value: 'Mira', label: 'Mira' },
+  ];
+
+  // Gaya kustom untuk react-select
+  const customStyles = {
+    control: (provided: any) => ({
+      ...provided,
+      backgroundColor: '#A64D79',
+      borderColor: '#FFFFFF',
+      color: '#FFFFFF',
+      padding: '2px 4px',
+      borderRadius: '4px',
+      fontSize: '1.125rem',
+      '&:hover': {
+        borderColor: '#FFFFFF',
+      },
+    }),
+    input: (provided: any) => ({
+      ...provided,
+      color: '#FFFFFF',
+    }),
+    singleValue: (provided: any) => ({
+      ...provided,
+      color: '#FFFFFF',
+    }),
+    menu: (provided: any) => ({
+      ...provided,
+      backgroundColor: '#FFE1F9',
+      border: '1px solid #BC69A7',
+      borderRadius: '4px',
+    }),
+    option: (provided: any, state: any) => ({
+      ...provided,
+      backgroundColor: state.isSelected ? '#D29BC7' : '#FFE1F9',
+      color: state.isSelected ? '#FFFFFF' : '#6A1E55',
+      '&:hover': {
+        backgroundColor: '#D29BC7',
+        color: '#FFFFFF',
+      },
+    }),
+    placeholder: (provided: any) => ({
+      ...provided,
+      color: '#FFFFFF',
+    }),
+  };
+
   useEffect(() => {
     const loadProducts = async () => {
       try {
@@ -48,6 +116,13 @@ export default function AddSalesPage() {
     setFormData((prev: FormData2) => ({
       ...prev,
       [name]: name === 'discount' ? Number(value) || 0 : value,
+    }));
+  };
+
+  const handleCustomerChange = (selectedOption: any) => {
+    setFormData((prev: FormData2) => ({
+      ...prev,
+      customer: selectedOption ? selectedOption.value : '',
     }));
   };
 
@@ -122,13 +197,17 @@ export default function AddSalesPage() {
       alert('Tambahkan setidaknya satu produk sebelum membayar.');
       return;
     }
+    if (formData.paymentAmount === 0) {
+      alert('Masukkan nominal pembayaran.');
+      return;
+    }
+    if (formData.paymentAmount < formData.totalPayment) {
+      alert('Nominal pembayaran tidak cukup.');
+      return;
+    }
 
     const transactionId = `#${Math.random().toString(36).substr(2, 3).toUpperCase()}729`;
-    const formattedDate = new Date().toLocaleDateString('id-ID', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    }).split('/').join('/');
+    const formattedDate = getCurrentDate();
 
     const productString = formData.products
       .map((product: Product, index: number) => `${product.name} - ${product.quantity} pcs`)
@@ -143,7 +222,7 @@ export default function AddSalesPage() {
     };
 
     try {
-      const response = await fetch('/api/transactions/save', {
+      const response = await fetch('/seller/transactions/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newTransaction),
@@ -178,9 +257,9 @@ export default function AddSalesPage() {
     setFormattedPayment('');
     setFormattedDiscount('');
     setFormData({
-      date: '22/03/2025',
+      date: getCurrentDate(),
       cashier: 'Nama Pegawai',
-      customer: 'Nama Pelanggan',
+      customer: '',
       products: [],
       discount: 0,
       totalPayment: 0,
@@ -283,27 +362,14 @@ export default function AddSalesPage() {
               </div>
               <div>
                 <label className="block text-xl text-white mb-2 uppercase">Pelanggan</label>
-                <div className="custom-select-wrapper">
-                  <select
-                    name="customer"
-                    value={formData.customer}
-                    onChange={handleInputChange}
-                    className="px-4 py-2 rounded border border-white bg-[#A64D79] text-white text-lg custom-select"
-                    aria-label="Pilih pelanggan"
-                  >
-                    <option value="Nama Pelanggan" disabled>Nama Pelanggan</option>
-                    <option value="Paijo">Paijo</option>
-                    <option value="Budi">Budi</option>
-                    <option value="Siti">Siti</option>
-                    <option value="Rina">Rina</option>
-                    <option value="Andi">Andi</option>
-                    <option value="Dewi">Dewi</option>
-                    <option value="Joko">Joko</option>
-                    <option value="Lina">Lina</option>
-                    <option value="Tono">Tono</option>
-                    <option value="Mira">Mira</option>
-                  </select>
-                </div>
+                <Select
+                  options={customers}
+                  onChange={handleCustomerChange}
+                  placeholder="Pilih pelanggan"
+                  isClearable
+                  styles={customStyles}
+                  aria-label="Pilih pelanggan"
+                />
               </div>
             </div>
           </div>
@@ -574,7 +640,7 @@ export default function AddSalesPage() {
             </div>
             <div>
               <div className="mb-4">
-                <label className="block text-xl text-white mb-2 uppercase">Nominal</label>
+                <label className="block text-xl text-white mb-2 uppercase">Nominal Pembayaran</label>
                 <div className="relative w-80">
                   <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white text-lg">Rp</span>
                   <input
