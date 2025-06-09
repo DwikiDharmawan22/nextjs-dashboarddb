@@ -1,22 +1,40 @@
 'use client';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { cousine } from '@/app/ui/fonts';
 import { ClipboardDocumentIcon } from '@heroicons/react/24/outline';
 
+interface FileMetadata {
+  name: string;
+  size: string;
+  type: string;
+  lastModified: string;
+}
+
+interface ProductFormData {
+  id: string;
+  name: string;
+  price: string;
+  image: File | null;
+}
+
 export default function AddProductPage() {
   const router = useRouter();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ProductFormData>({
     id: '',
     name: '',
     price: '',
-    image: null as File | null,
+    image: null,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [fileMetadata, setFileMetadata] = useState<{ name: string; size: string; type: string; lastModified: string } | null>(null);
+  const [fileMetadata, setFileMetadata] = useState<FileMetadata | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  useEffect(() => {
+    // Initialize state on client side to avoid hydration mismatch
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.image) {
       alert('Silakan unggah gambar!');
@@ -99,7 +117,6 @@ export default function AddProductPage() {
         lastModified: lastModified,
       });
     } else {
-      console.error('No file selected');
       setImagePreview(null);
       setFileMetadata(null);
     }
