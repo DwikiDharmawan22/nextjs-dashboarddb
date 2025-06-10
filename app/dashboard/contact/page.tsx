@@ -1,17 +1,40 @@
 import { irishGrover } from '@/app/ui/fonts';
 import { Contact } from '@/app/lib/definitions2';
 import { FaMapMarkerAlt, FaPhoneAlt, FaGlobe, FaFacebook, FaPinterest, FaWhatsapp, FaInstagram } from 'react-icons/fa';
+import { headers } from 'next/headers';
 
 async function fetchContactData(): Promise<Contact> {
-  const res = await fetch('/api/contact', { cache: 'no-store' });
-  if (!res.ok) {
-    throw new Error('Gagal mengambil data kontak');
+  try {
+    const headersList = await headers(); // Tambahkan await di sini
+    const host = headersList.get('host');
+    const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https';
+    const baseUrl = `${protocol}://${host}`;
+    const res = await fetch(`${baseUrl}/api/contact`, { cache: 'no-store' });
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Gagal mengambil data: ${res.status} - ${errorText}`);
+    }
+    return res.json();
+  } catch (error) {
+    console.error('Fetch error:', error);
+    throw error;
   }
-  return res.json();
 }
 
 export default async function ContactPage() {
-  const contactData = await fetchContactData();
+  let contactData;
+  try {
+    contactData = await fetchContactData();
+  } catch (error) {
+    console.error('Error in ContactPage:', error);
+    return (
+      <div className="min-h-full bg-gradient-to-b text-white overflow-x-hidden p-6 text-center">
+        <h1 className={`${irishGrover.className} text-4xl font-bold mb-10`}>Terjadi Kesalahan</h1>
+        <p>Gagal memuat data kontak. Silakan coba lagi nanti.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-full bg-gradient-to-b text-white overflow-x-hidden">
       <div className="px-6 py-8">
