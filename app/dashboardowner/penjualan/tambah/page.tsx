@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { cousine } from '@/app/ui/fonts';
 import { FormData2, Product, Transaction, AvailableProduct } from '@/app/lib/definitions2';
 import Select from 'react-select';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function AddSalesPage() {
   const router = useRouter();
@@ -40,6 +42,7 @@ export default function AddSalesPage() {
   const [isSuccessPopupOpen, setIsSuccessPopupOpen] = useState(false);
   const [formattedPayment, setFormattedPayment] = useState<string>('');
   const [formattedDiscount, setFormattedDiscount] = useState<string>('');
+  const [quantityInput, setQuantityInput] = useState<string>('1');
 
   // Daftar pelanggan untuk react-select
   const customers = [
@@ -98,18 +101,37 @@ export default function AddSalesPage() {
     }),
   };
 
+  // Memuat produk dari API saat komponen dimuat
   useEffect(() => {
     const loadProducts = async () => {
       try {
         const response = await fetch('/api/products');
+        if (!response.ok) {
+          throw new Error(`Gagal memuat produk: ${response.status}`);
+        }
         const data = await response.json();
         setAvailableProducts(data);
       } catch (error) {
         console.error('Failed to load products:', error);
+        alert('Gagal memuat produk. Periksa koneksi atau server.');
       }
     };
     loadProducts();
   }, []);
+
+  // Sinkronisasi totalPayment dan kembalian saat products, discount, atau paymentAmount berubah
+  useEffect(() => {
+    setFormData((prev) => {
+      const subtotal = prev.products.reduce((sum: number, p: Product) => sum + p.subtotal, 0);
+      const newTotalPayment = subtotal - prev.discount >= 0 ? subtotal - prev.discount : 0;
+      const newChange = prev.paymentAmount - newTotalPayment; // Allow negative change
+      return {
+        ...prev,
+        totalPayment: newTotalPayment,
+        change: newChange,
+      };
+    });
+  }, [formData.products, formData.discount, formData.paymentAmount]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -136,59 +158,182 @@ export default function AddSalesPage() {
     setFormData((prev: FormData2) => ({
       ...prev,
       discount,
-      totalPayment: prev.products.reduce((sum: number, p: Product) => sum + p.subtotal, 0) - discount,
     }));
   };
 
   const handleProductChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    const product = availableProducts.find((p: AvailableProduct) => p.name === value);
-    const quantity = name === 'quantity' ? Number(value) || 1 : selectedProduct.quantity;
-    const price = product ? product.price : selectedProduct.price;
-
-    setSelectedProduct((prev: Product) => ({
-      ...prev,
-      [name]: value,
-      price: name === 'name' && product ? product.price : prev.price,
-      quantity,
-      subtotal: (name === 'name' && product ? product.price : prev.price) * quantity,
-    }));
+    if (name === 'quantity') {
+      setQuantityInput(value);
+      const quantity = value === '' ? 0 : Number(value);
+      setSelectedProduct((prev: Product) => ({
+        ...prev,
+        quantity: isNaN(quantity) || quantity < 0 ? 0 : quantity,
+        subtotal: prev.price * (isNaN(quantity) || quantity < 0 ? 0 : quantity),
+      }));
+    } else {
+      const product = availableProducts.find((p: AvailableProduct) => p.name === value);
+      const price = product ? product.price : selectedProduct.price;
+      setSelectedProduct((prev: Product) => ({
+        ...prev,
+        [name]: value,
+        price: name === 'name' && product ? product.price : prev.price,
+        subtotal: price * prev.quantity,
+      }));
+    }
   };
 
-  const handleAddProduct = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleAddProduct = (e: React.MouseEvent<HTMLButtonElement>, product: AvailableProduct) => {
     e.preventDefault();
-    if (!selectedProduct.name) return;
+    const quantity = Number(quantityInput) || 1;
+    if (quantity < 1) {
+      alert('Jumlah harus minimal 1.');
+      return;
+    }
+    const newProduct = {
+      name: product.name,
+      quantity,
+      price: product.price,
+      subtotal: product.price * quantity,
+    };
 
-    setFormData((prev: FormData2) => {
-      const updatedProducts = [...prev.products, { ...selectedProduct }];
-      const subtotal = updatedProducts.reduce((sum: number, p: Product) => sum + p.subtotal, 0);
-      return {
-        ...prev,
-        products: updatedProducts,
-        totalPayment: subtotal - prev.discount,
-      };
-    });
+    setFormData((prev: FormData2) => ({
+      ...prev,
+      products: [...prev.products, newProduct],
+    }));
+    setQuantityInput('1');
     setSelectedProduct({ name: '', quantity: 1, price: 0, subtotal: 0 });
     setIsPopupOpen(false);
+
+    toast.success(
+      <div className="flex items-center gap-2">
+        <span>Produk berhasil ditambahkan!</span>
+      </div>,
+      {
+        position: 'top-center',
+        autoClose: 4000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: 'colored',
+        style: {
+          fontSize: '1.25rem',
+          padding: '16px',
+          borderRadius: '8px',
+          backgroundColor: '#34D399',
+          color: '#000000',
+        },
+      }
+    );
   };
 
   const handleEditProduct = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     if (!selectedProduct.name || editIndex === null) return;
 
+    const quantity = Number(quantityInput) || 1;
+    if (quantity < 1) {
+      alert('Jumlah harus minimal 1.');
+      return;
+    }
+
+    const originalProduct = formData.products[editIndex];
+    const updatedProduct = { ...selectedProduct, quantity, subtotal: selectedProduct.price * quantity };
+
+    // Check if any changes were made
+    const isChanged =
+      originalProduct.quantity !== updatedProduct.quantity ||
+      originalProduct.subtotal !== updatedProduct.subtotal;
+
     setFormData((prev: FormData2) => {
       const updatedProducts = [...prev.products];
-      updatedProducts[editIndex] = { ...selectedProduct };
-      const subtotal = updatedProducts.reduce((sum: number, p: Product) => sum + p.subtotal, 0);
+      updatedProducts[editIndex] = updatedProduct;
       return {
         ...prev,
         products: updatedProducts,
-        totalPayment: subtotal - prev.discount,
       };
     });
+
+    if (isChanged) {
+      toast.success(
+        <div className="flex items-center gap-2">
+          <span>Produk berhasil diedit!</span>
+        </div>,
+        {
+          position: 'top-center',
+          autoClose: 4000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          theme: 'colored',
+          style: {
+            fontSize: '1.25rem',
+            padding: '16px',
+            borderRadius: '8px',
+            backgroundColor: '#34D399',
+            color: '#000000',
+          },
+        }
+      );
+    } else {
+      toast.info(
+        <div className="flex items-center gap-2">
+          <span>Tidak ada perubahan pada produk.</span>
+        </div>,
+        {
+          position: 'top-center',
+          autoClose: 4000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          theme: 'colored',
+          style: {
+            fontSize: '1.25rem',
+            padding: '16px',
+            borderRadius: '8px',
+            backgroundColor: '#3B82F6',
+            color: '#FFFFFF',
+          },
+        }
+      );
+    }
+
     setSelectedProduct({ name: '', quantity: 1, price: 0, subtotal: 0 });
+    setQuantityInput('1');
     setIsEditPopupOpen(false);
     setEditIndex(null);
+  };
+
+  const handleDeleteProduct = (index: number) => {
+    setFormData((prev: FormData2) => ({
+      ...prev,
+      products: prev.products.filter((_, i: number) => i !== index),
+    }));
+
+    toast.success(
+      <div className="flex items-center gap-2">
+        <span>Produk berhasil dihapus!</span>
+      </div>,
+      {
+        position: 'top-center',
+        autoClose: 4000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: 'colored',
+        style: {
+          fontSize: '1.25rem',
+          padding: '16px',
+          borderRadius: '8px',
+          backgroundColor: '#34D399',
+          color: '#000000',
+        },
+      }
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -197,18 +342,21 @@ export default function AddSalesPage() {
       alert('Tambahkan setidaknya satu produk sebelum membayar.');
       return;
     }
-    if (formData.paymentAmount === 0) {
-      alert('Masukkan nominal pembayaran.');
+    if (!formData.customer) {
+      alert('Pilih pelanggan sebelum membayar.');
       return;
     }
-    if (formData.paymentAmount < formData.totalPayment) {
-      alert('Nominal pembayaran tidak cukup.');
+    if (formData.paymentAmount <= 0) {
+      alert('Nominal pembayaran harus lebih dari 0.');
+      return;
+    }
+    if (formData.totalPayment <= 0) {
+      alert('Total pembayaran harus lebih dari 0.');
       return;
     }
 
     const transactionId = `#${Math.random().toString(36).substr(2, 3).toUpperCase()}729`;
     const formattedDate = getCurrentDate();
-
     const productString = formData.products
       .map((product: Product, index: number) => `${product.name} - ${product.quantity} pcs`)
       .join(', ');
@@ -216,25 +364,32 @@ export default function AddSalesPage() {
     const newTransaction: Transaction = {
       id: transactionId,
       date: formattedDate,
-      totalprice: formData.totalPayment,
+      totalprice: Number(formData.totalPayment),
       username: formData.customer,
       product: productString,
     };
 
+    console.log('Sending transaction:', JSON.stringify(newTransaction, null, 2));
+
     try {
-      const response = await fetch('/seller/transactions/save', {
+      const response = await fetch('/api/transactions/save', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(newTransaction),
       });
       if (response.ok) {
+        console.log('Transaksi berhasil disimpan');
         setIsSuccessPopupOpen(true);
       } else {
-        alert('Gagal menyimpan transaksi.');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Server error:', errorData, 'Status:', response.status);
+        alert(`Gagal menyimpan transaksi: ${errorData.message || `Server error ${response.status}`}`);
       }
     } catch (error) {
-      alert('Gagal menyimpan transaksi. Silakan coba lagi.');
-      console.error('Error:', error);
+      console.error('Network error:', error);
+      alert('Gagal menyimpan transaksi. Periksa koneksi Anda atau pastikan server berjalan.');
     }
   };
 
@@ -248,7 +403,6 @@ export default function AddSalesPage() {
     setFormData((prev: FormData2) => ({
       ...prev,
       paymentAmount: payment,
-      change: payment - prev.totalPayment,
     }));
   };
 
@@ -266,25 +420,39 @@ export default function AddSalesPage() {
       paymentAmount: 0,
       change: 0,
     });
-    router.push('/dashboardowner/penjualan/tambah');
+    setQuantityInput('1');
+    router.push('/dashboardowner/penjualan');
   };
 
   const openPopup = () => setIsPopupOpen(true);
   const closePopup = () => {
     setIsPopupOpen(false);
     setSelectedProduct({ name: '', quantity: 1, price: 0, subtotal: 0 });
+    setQuantityInput('1');
   };
 
   const openEditPopup = (index: number) => {
     setEditIndex(index);
-    setSelectedProduct({ ...formData.products[index] });
+    const product = formData.products[index];
+    setSelectedProduct({ ...product });
+    setQuantityInput(product.quantity.toString());
     setIsEditPopupOpen(true);
   };
 
   const closeEditPopup = () => {
     setIsEditPopupOpen(false);
     setSelectedProduct({ name: '', quantity: 1, price: 0, subtotal: 0 });
+    setQuantityInput('1');
     setEditIndex(null);
+  };
+
+  // Format kembalian untuk menangani nilai negatif
+  const formatChange = (change: number) => {
+    if (change >= 0) {
+      return `Rp${change.toLocaleString('id-ID')},00`;
+    } else {
+      return `-Rp${Math.abs(change).toLocaleString('id-ID')},00`;
+    }
   };
 
   return (
@@ -327,7 +495,15 @@ export default function AddSalesPage() {
           color: #999999;
           font-style: italic;
         }
+        .pilih-button {
+          transition: background-color 0.2s ease, transform 0.2s ease;
+        }
+        .pilih-button:hover {
+          background-color: #A64D79;
+          transform: scale(1);
+        }
       `}</style>
+      <ToastContainer />
       <div className="bg-[#A64D79] p-12 rounded-lg max-w-8xl mx-auto">
         <form onSubmit={handleSubmit}>
           <div className="flex justify-between mb-8">
@@ -422,17 +598,7 @@ export default function AddSalesPage() {
                           <button
                             type="button"
                             className="bg-red-500 text-white px-3 py-1 rounded"
-                            onClick={() => {
-                              setFormData((prev: FormData2) => {
-                                const updatedProducts = prev.products.filter((_, i: number) => i !== index);
-                                const subtotal = updatedProducts.reduce((sum: number, p: Product) => sum + p.subtotal, 0);
-                                return {
-                                  ...prev,
-                                  products: updatedProducts,
-                                  totalPayment: subtotal - prev.discount,
-                                };
-                              });
-                            }}
+                            onClick={() => handleDeleteProduct(index)}
                             aria-label={`Hapus produk ${product.name}`}
                           >
                             Hapus
@@ -468,18 +634,8 @@ export default function AddSalesPage() {
                         <td className="p-2">
                           <button
                             type="button"
-                            onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-                              e.preventDefault();
-                              const newProduct = {
-                                name: product.name,
-                                quantity: selectedProduct.quantity,
-                                price: product.price,
-                                subtotal: product.price * selectedProduct.quantity,
-                              };
-                              setSelectedProduct(newProduct);
-                              handleAddProduct(e);
-                            }}
-                            className="bg-[#BC69A7] text-white px-3 py-1 rounded uppercase"
+                            onClick={(e) => handleAddProduct(e, product)}
+                            className="pilih-button bg-[#BC69A7] text-white px-3 py-1 rounded uppercase"
                             aria-label={`Pilih produk ${product.name}`}
                           >
                             Pilih
@@ -494,7 +650,7 @@ export default function AddSalesPage() {
                   <input
                     type="number"
                     name="quantity"
-                    value={selectedProduct.quantity}
+                    value={quantityInput}
                     onChange={handleProductChange}
                     className="px-3 py-2 rounded border bg-[#FFE1F9] border-[#BC69A7] w-full"
                     min="1"
@@ -534,7 +690,7 @@ export default function AddSalesPage() {
                   <input
                     type="number"
                     name="quantity"
-                    value={selectedProduct.quantity}
+                    value={quantityInput}
                     onChange={handleProductChange}
                     className="px-3 py-2 rounded border bg-[#FFE1F9] border-[#BC69A7] w-full"
                     min="1"
@@ -586,7 +742,7 @@ export default function AddSalesPage() {
                 </div>
                 <h2 className="text-2xl text-[#6A1E55] font-bold mb-2 uppercase">Pembayaran Berhasil</h2>
                 <p className="text-lg text-[#6A1E55] mb-4">
-                  Kembalian Anda: Rp{(formData.change || 0).toLocaleString('id-ID')},00
+                  Kembalian Anda: {formatChange(formData.change)}
                 </p>
                 <button
                   type="button"
@@ -658,7 +814,7 @@ export default function AddSalesPage() {
                 <label className="block text-xl text-white mb-2 uppercase">Kembalian</label>
                 <input
                   type="text"
-                  value={`Rp${(formData.change || 0).toLocaleString('id-ID')},00`}
+                  value={formatChange(formData.change)}
                   readOnly
                   className="px-4 py-2 rounded border border-white bg-[#A64D79] text-white text-lg"
                   aria-label="Kembalian"
