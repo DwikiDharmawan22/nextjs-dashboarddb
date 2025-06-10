@@ -1,4 +1,3 @@
-// components/nav-link.tsx
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
@@ -20,15 +19,18 @@ const links = [
 export default function NavLinks() {
   const pathname = usePathname();
   const router = useRouter();
-  const { isLoggedIn, logout } = useAuth();
+  const { isLoggedIn, logout } = useAuth(); // Tambahkan logout dari useAuth
+
+  // Nonaktifkan navigasi di halaman autentikasi
+  const isAuthPage = ['/auth/login', '/auth/register', '/auth/forgot-password'].includes(pathname);
 
   const handleProductClick = () => {
-    if (!isLoggedIn) {
+    if (isAuthPage || !isLoggedIn) {
       toast.error('Silakan login untuk mengakses navigasi', {
         theme: 'dark',
         position: 'top-right',
       });
-      router.push('/auth/login');
+      if (!isAuthPage) router.push('/auth/login');
       return;
     }
 
@@ -38,25 +40,33 @@ export default function NavLinks() {
   };
 
   const handleLinkClick = (href: string) => {
-    if (!isLoggedIn) {
+    if (isAuthPage || !isLoggedIn) {
       toast.error('Silakan login untuk mengakses navigasi', {
         theme: 'dark',
         position: 'top-right',
       });
-      router.push('/auth/login');
+      if (!isAuthPage) router.push('/auth/login');
       return;
     }
     router.push(href);
   };
 
   const handleLogout = () => {
+    if (!isLoggedIn) {
+      toast.error('Silakan login terlebih dahulu', {
+        theme: 'dark',
+        position: 'top-right',
+      });
+      router.push('/auth/login');
+      return;
+    }
     logout();
     toast.success('Logout Berhasil!', { theme: 'dark', position: 'top-right' });
     router.push('/auth/login');
   };
 
   return (
-    <div className={`flex space-x-12 ${irishGrover.className}`}>
+    <div className={`flex justify-center space-x-12 py-4 ${irishGrover.className}`}>
       {links.map((link) =>
         link.name === 'Product' ? (
           <button
@@ -67,10 +77,10 @@ export default function NavLinks() {
               {
                 'text-gray-300 hover:text-black': !pathname.startsWith('/dashboard/product'),
                 'text-black border-b-4 border-black': pathname.startsWith('/dashboard/product'),
-                'cursor-not-allowed opacity-50': !isLoggedIn,
+                'cursor-not-allowed opacity-50': !isLoggedIn || isAuthPage,
               }
             )}
-            disabled={!isLoggedIn}
+            disabled={!isLoggedIn || isAuthPage}
           >
             {link.name}
           </button>
@@ -83,16 +93,16 @@ export default function NavLinks() {
               {
                 'text-gray-300 hover:text-black': pathname !== link.href,
                 'text-black border-b-4 border-black': pathname === link.href,
-                'cursor-not-allowed opacity-50': !isLoggedIn,
+                'cursor-not-allowed opacity-50': !isLoggedIn || isAuthPage,
               }
             )}
-            disabled={!isLoggedIn}
+            disabled={!isLoggedIn || isAuthPage}
           >
             {link.name}
           </button>
         )
       )}
-      {isLoggedIn && (
+      {isLoggedIn && !isAuthPage && (
         <button
           onClick={handleLogout}
           className="px-3 py-2 text-xl md:text-2xl lg:text-3xl font-medium text-gray-300 hover:text-black"

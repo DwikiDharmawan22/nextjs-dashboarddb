@@ -44,7 +44,7 @@ const LoginPage = () => {
     setIsClient(true);
   }, []);
 
-  const refreshCaptcha = useCallback(() => {
+  const refreshCaptcha = useCallback(() => { // Perbaiki dari 'refresh captive'
     setCaptcha(generateRandomCaptcha());
   }, []);
 
@@ -120,7 +120,7 @@ const LoginPage = () => {
       }
 
       toast.success('Login Berhasil!', { theme: 'dark', position: 'top-right' });
-      login(); // Update login status in Context
+      login();
 
       if (data.role === 'admin') {
         router.push('/dashboardowner');

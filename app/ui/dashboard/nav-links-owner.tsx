@@ -16,24 +16,21 @@ const links = [
 export default function NavLinksOwner() {
   const pathname = usePathname();
   const router = useRouter();
-  const { isLoggedIn, logout } = useAuth();
+  const { isLoggedIn } = useAuth(); // Hanya gunakan isLoggedIn, logout ditangani oleh CenterNavOwner
+
+  // Nonaktifkan navigasi di halaman autentikasi
+  const isAuthPage = ['/auth/login', '/auth/register', '/auth/forgot-password'].includes(pathname);
 
   const handleLinkClick = (href: string) => {
-    if (!isLoggedIn) {
+    if (isAuthPage || !isLoggedIn) {
       toast.error('Silakan login untuk mengakses navigasi', {
         theme: 'dark',
         position: 'top-right',
       });
-      router.push('/auth/login');
+      if (!isAuthPage) router.push('/auth/login');
       return;
     }
     router.push(href);
-  };
-
-  const handleLogout = () => {
-    logout();
-    toast.success('Logout Berhasil!', { theme: 'dark', position: 'top-right' });
-    router.push('/auth/login');
   };
 
   return (
@@ -47,15 +44,14 @@ export default function NavLinksOwner() {
             {
               'text-gray-300 hover:text-black': pathname !== link.href,
               'text-black border-b-4 border-black': pathname === link.href,
-              'cursor-not-allowed opacity-50': !isLoggedIn,
+              'cursor-not-allowed opacity-50': !isLoggedIn || isAuthPage,
             }
           )}
-          disabled={!isLoggedIn}
+          disabled={!isLoggedIn || isAuthPage}
         >
           {link.name}
         </button>
       ))}
-      
     </div>
   );
 }

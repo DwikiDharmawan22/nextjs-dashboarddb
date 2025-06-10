@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import NavLinksOwner from '@/app/ui/dashboard/nav-links owner';
+import NavLinksOwner from '@/app/ui/dashboard/nav-links-owner';
 import Image from 'next/image';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import { irishGrover } from '@/app/ui/fonts';
