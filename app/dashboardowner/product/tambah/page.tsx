@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { cousine } from '@/app/ui/fonts';
 import { ClipboardDocumentIcon } from '@heroicons/react/24/outline';
+import { generateProductId } from '@/app/lib/generateProductId';
 
 interface FileMetadata {
   name: string;
@@ -18,6 +19,11 @@ interface ProductFormData {
   image: File | null;
 }
 
+interface FormError {
+  field: string;
+  message: string;
+}
+
 export default function AddProductPage() {
   const router = useRouter();
   const [formData, setFormData] = useState<ProductFormData>({
@@ -29,18 +35,49 @@ export default function AddProductPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [fileMetadata, setFileMetadata] = useState<FileMetadata | null>(null);
+  const [errors, setErrors] = useState<FormError[]>([]);
 
   useEffect(() => {
-    // Initialize state on client side to avoid hydration mismatch
-  }, []);
+    // Generate product ID on component mount
+    setFormData((prev) => ({
+      ...prev,
+      id: generateProductId(),
+    }));
+
+    // Cleanup image preview URL on unmount
+    return () => {
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
+
+  const validateForm = (): boolean => {
+    const newErrors: FormError[] = [];
+    
+    if (!formData.name.trim()) {
+      newErrors.push({ field: 'name', message: 'Nama produk wajib diisi' });
+    }
+    
+    if (!formData.price || isNaN(parseFloat(formData.price)) || parseFloat(formData.price) <= 0) {
+      newErrors.push({ field: 'price', message: 'Harga harus berupa angka positif' });
+    }
+    
+    if (!formData.image) {
+      newErrors.push({ field: 'image', message: 'Gambar produk wajib diunggah' });
+    }
+
+    setErrors(newErrors);
+    return newErrors.length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.image) {
-      alert('Silakan unggah gambar!');
+    
+    if (!validateForm()) {
       return;
     }
-    
+
     setIsSubmitting(true);
     try {
       const toBase64 = (file: File): Promise<string> => {
@@ -52,11 +89,11 @@ export default function AddProductPage() {
         });
       };
 
-      const imageBase64 = await toBase64(formData.image);
+      const imageBase64 = await toBase64(formData.image!);
 
       const productData = {
         id: formData.id,
-        name: formData.name,
+        name: formData.name.trim(),
         price: parseFloat(formData.price),
         image: imageBase64,
       };
@@ -68,14 +105,18 @@ export default function AddProductPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save product');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to save product');
       }
 
-      alert('Product added successfully!');
+      alert('Produk berhasil ditambahkan!');
       router.push('/dashboardowner/product');
     } catch (error) {
       console.error('Error adding product:', error);
-      alert('Failed to add product. Please try again.');
+      setErrors([{ 
+        field: 'general', 
+        message: error instanceof Error ? error.message : 'Gagal menambahkan produk. Silakan coba lagi.'
+      }]);
     } finally {
       setIsSubmitting(false);
     }
@@ -87,6 +128,8 @@ export default function AddProductPage() {
       ...prev,
       [name]: value,
     }));
+    // Clear error for this field
+    setErrors((prev) => prev.filter((error) => error.field !== name));
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -94,32 +137,51 @@ export default function AddProductPage() {
     if (file) {
       const validTypes = ['image/png', 'image/jpeg'];
       const maxSize = 7 * 1024 * 1024; // 7MB
+      
       if (!validTypes.includes(file.type)) {
-        alert('Hanya file PNG atau JPG yang diperbolehkan!');
+        setErrors([{ field: 'image', message: 'Hanya file PNG atau JPG yang diperbolehkan!' }]);
         return;
       }
+      
       if (file.size > maxSize) {
-        alert('Ukuran file melebihi batas 7MB!');
+        setErrors([{ field: 'image', message: 'Ukuran file melebihi batas 7MB!' }]);
         return;
       }
+
       setFormData((prev) => ({
         ...prev,
         image: file,
       }));
+      
       const previewUrl = URL.createObjectURL(file);
       setImagePreview(previewUrl);
+      
       const sizeInMB = (file.size / (1024 * 1024)).toFixed(1) + 'MB';
-      const lastModified = new Date(file.lastModified).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short' });
+      const lastModified = new Date(file.lastModified).toLocaleString('en-GB', { 
+        dateStyle: 'short', 
+        timeStyle: 'short' 
+      });
+      
       setFileMetadata({
         name: file.name,
         size: sizeInMB,
         type: file.type.split('/')[1].toUpperCase(),
         lastModified: lastModified,
       });
+      
+      setErrors((prev) => prev.filter((error) => error.field !== 'image'));
     } else {
       setImagePreview(null);
       setFileMetadata(null);
+      setErrors((prev) => prev.filter((error) => error.field !== 'image'));
     }
+  };
+
+  const renderError = (field: string) => {
+    const error = errors.find((e) => e.field === field);
+    return error ? (
+      <p className="text-red-300 text-sm mt-1">{error.message}</p>
+    ) : null;
   };
 
   return (
@@ -129,6 +191,11 @@ export default function AddProductPage() {
       </h1>
       <div className="bg-[#A64D79] p-12 rounded-lg max-w-8xl mx-auto">
         <h2 className="text-4xl text-white mb-8">Detail Produk</h2>
+        {errors.some((e) => e.field === 'general') && (
+          <div className="bg-red-600/20 border border-red-600 text-white p-4 rounded-lg mb-6">
+            {errors.find((e) => e.field === 'general')?.message}
+          </div>
+        )}
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-3 gap-6 mb-8">
             <div>
@@ -138,10 +205,11 @@ export default function AddProductPage() {
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
-                className={`w-full px-4 py-3 rounded border border-white bg-transparent text-white placeholder-white placeholder-opacity-50 text-xl ${cousine.className}`}
+                className={`w-full px-4 py-3 rounded border border-white bg-transparent text-white placeholder-white placeholder-opacity-50 text-xl ${cousine.className} ${errors.some((e) => e.field === 'name') ? 'border-red-600' : ''}`}
                 placeholder="Masukkan nama produk"
                 required
               />
+              {renderError('name')}
             </div>
             <div>
               <label className="block text-2xl text-white mb-3">ID Produk</label>
@@ -149,10 +217,8 @@ export default function AddProductPage() {
                 type="text"
                 name="id"
                 value={formData.id}
-                onChange={handleInputChange}
+                readOnly
                 className={`w-full px-4 py-3 rounded border border-white bg-transparent text-white placeholder-white placeholder-opacity-50 text-xl ${cousine.className}`}
-                placeholder="Masukkan id produk"
-                required
               />
             </div>
             <div>
@@ -162,16 +228,17 @@ export default function AddProductPage() {
                 name="price"
                 value={formData.price}
                 onChange={handleInputChange}
-                className={`w-full px-4 py-3 rounded border border-white bg-transparent text-white placeholder-white placeholder-opacity-50 text-xl ${cousine.className}`}
+                className={`w-full px-4 py-3 rounded border border-white bg-transparent text-white placeholder-white placeholder-opacity-50 text-xl ${cousine.className} ${errors.some((e) => e.field === 'price') ? 'border-red-600' : ''}`}
                 placeholder="Masukkan harga"
                 step="0.01"
                 required
               />
+              {renderError('price')}
             </div>
           </div>
           <div className="mb-8">
             <label className="block text-2xl text-white mb-3">Image</label>
-            <div className="border border-white rounded-lg p-8 text-center">
+            <div className={`border border-white rounded-lg p-8 text-center ${errors.some((e) => e.field === 'image') ? 'border-red-600' : ''}`}>
               <input
                 type="file"
                 name="image"
@@ -223,6 +290,7 @@ export default function AddProductPage() {
               </label>
             </div>
             <p className="text-white text-lg mt-3">PNG, JPG, batas 7MB</p>
+            {renderError('image')}
           </div>
           <div className="flex gap-6 justify-between">
             <button
