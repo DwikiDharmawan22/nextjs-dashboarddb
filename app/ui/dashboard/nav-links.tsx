@@ -19,7 +19,7 @@ const links = [
 export default function NavLinks() {
   const pathname = usePathname();
   const router = useRouter();
-  const { isLoggedIn, logout } = useAuth(); // Tambahkan logout dari useAuth
+  const { isLoggedIn, logout } = useAuth();
 
   // Nonaktifkan navigasi di halaman autentikasi
   const isAuthPage = ['/auth/login', '/auth/register', '/auth/forgot-password'].includes(pathname);

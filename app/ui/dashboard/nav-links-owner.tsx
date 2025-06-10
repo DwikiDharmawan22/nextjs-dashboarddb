@@ -16,7 +16,7 @@ const links = [
 export default function NavLinksOwner() {
   const pathname = usePathname();
   const router = useRouter();
-  const { isLoggedIn } = useAuth(); // Hanya gunakan isLoggedIn, logout ditangani oleh CenterNavOwner
+  const { isLoggedIn } = useAuth();
 
   // Nonaktifkan navigasi di halaman autentikasi
   const isAuthPage = ['/auth/login', '/auth/register', '/auth/forgot-password'].includes(pathname);

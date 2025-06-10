@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState } from 'react';
 
 type AuthContextType = {
   isLoggedIn: boolean;
@@ -11,12 +11,10 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  useEffect(() => {
-    const loggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    setIsLoggedIn(loggedIn);
-  }, []);
+  // Inisialisasi isLoggedIn langsung dari localStorage
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
+    return typeof window !== 'undefined' && localStorage.getItem('isLoggedIn') === 'true';
+  });
 
   const login = () => {
     setIsLoggedIn(true);
