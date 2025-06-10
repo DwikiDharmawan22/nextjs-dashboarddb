@@ -7,6 +7,9 @@ import { cousine, creepster } from '@/app/ui/fonts';
 import { SaleProduct, EditForm } from '@/app/lib/definitions2';
 import Cards from '@/app/ui/dashboard/cards2';
 import Skeleton from '@/app/ui/skeletons2';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { CheckCircleIcon } from '@heroicons/react/24/outline';
 
 export default function Page() {
   const router = useRouter();
@@ -26,10 +29,22 @@ export default function Page() {
       try {
         setIsLoading(true);
         const response = await fetch('/api/products');
+        if (!response.ok) {
+          throw new Error('Failed to fetch products');
+        }
         const data = await response.json();
         setProducts(data);
       } catch (error) {
         console.error('Failed to load products:', error);
+        toast.error('Gagal memuat produk. Silakan coba lagi.', {
+          position: 'top-center',
+          autoClose: 4000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          theme: 'colored',
+        });
       } finally {
         setIsLoading(false);
       }
@@ -76,9 +91,26 @@ export default function Page() {
 
         const updatedProducts = products.filter((product) => product.id !== id);
         setProducts(updatedProducts);
+        toast.success('Produk berhasil dihapus!', {
+          position: 'top-center',
+          autoClose: 4000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          theme: 'colored',
+        });
       } catch (error) {
         console.error('Failed to delete product:', error);
-        alert('Failed to delete product. Please try again.');
+        toast.error('Gagal menghapus produk. Silakan coba lagi.', {
+          position: 'top-center',
+          autoClose: 4000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          theme: 'colored',
+        });
       }
     }
   };
@@ -96,25 +128,131 @@ export default function Page() {
   };
 
   const handleSaveEdit = async () => {
-    if (selectedProduct) {
-      const updatedProducts = products.map((product) =>
-        product.id === selectedProduct.id
-          ? { ...product, name: editForm.name, price: Number(editForm.price.replace(/[^0-9]/g, '')) }
-          : product
+    if (!selectedProduct) {
+      toast.error('Tidak ada produk yang dipilih.', {
+        position: 'top-center',
+        autoClose: 4000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: 'colored',
+      });
+      return;
+    }
+
+    // Validate inputs
+    if (!editForm.name.trim()) {
+      toast.error('Nama produk tidak boleh kosong.', {
+        position: 'top-center',
+        autoClose: 4000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: 'colored',
+      });
+      return;
+    }
+
+    const cleanedPrice = editForm.price.replace(/[^0-9]/g, '');
+    if (!cleanedPrice || isNaN(Number(cleanedPrice)) || Number(cleanedPrice) <= 0) {
+      toast.error('Harga harus berupa angka positif.', {
+        position: 'top-center',
+        autoClose: 4000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: 'colored',
+      });
+      return;
+    }
+
+    // Check if there are any changes
+    if (
+      editForm.name.trim() === selectedProduct.name &&
+      Number(cleanedPrice) === selectedProduct.price
+    ) {
+      toast.warn(
+        <div className="flex items-center gap-2">
+          <span>Tidak ada perubahan yang dilakukan!</span>
+        </div>,
+        {
+          position: 'top-center',
+          autoClose: 4000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          theme: 'colored',
+          style: {
+            fontSize: '1.25rem',
+            padding: '16px',
+            borderRadius: '8px',
+            backgroundColor: '#FBBF24', // Yellow for warning
+            color: '#000000',
+          },
+        }
       );
-      setProducts(updatedProducts);
-      try {
-        await fetch('/api/products', {
-          method: 'POST',
-          body: JSON.stringify(updatedProducts),
-          headers: { 'Content-Type': 'application/json' },
-        });
-      } catch (error) {
-        console.error('Failed to save product:', error);
+      return;
+    }
+
+    // Proceed with saving changes
+    const updatedProducts = products.map((product) =>
+      product.id === selectedProduct.id
+        ? { ...product, name: editForm.name.trim(), price: Number(cleanedPrice) }
+        : product
+    );
+    setProducts(updatedProducts);
+
+    try {
+      const response = await fetch('/api/products', {
+        method: 'POST',
+        body: JSON.stringify(updatedProducts),
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save product to the server');
       }
+
+      toast.success(
+        <div className="flex items-center gap-2">
+          <span>Produk berhasil diedit!</span>
+        </div>,
+        {
+          position: 'top-center',
+          autoClose: 4000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          theme: 'colored',
+          style: {
+            fontSize: '1.25rem',
+            padding: '16px',
+            borderRadius: '8px',
+            backgroundColor: '#34D399',
+            color: '#000000',
+          },
+        }
+      );
+
       setIsModalOpen(false);
       setSelectedProduct(null);
       setEditForm({ name: '', price: '' });
+    } catch (error) {
+      console.error('Failed to save product:', error);
+      toast.error('Gagal menyimpan produk. Silakan coba lagi.', {
+        position: 'top-center',
+        autoClose: 4000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: 'colored',
+      });
     }
   };
 
@@ -299,6 +437,7 @@ export default function Page() {
       >
         Back
       </button>
+      <ToastContainer />
     </div>
   );
 }

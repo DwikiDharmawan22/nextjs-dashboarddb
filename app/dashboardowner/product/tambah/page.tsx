@@ -2,8 +2,10 @@
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { cousine } from '@/app/ui/fonts';
-import { ClipboardDocumentIcon } from '@heroicons/react/24/outline';
+import { ClipboardDocumentIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import { generateProductId } from '@/app/lib/generateProductId';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 interface FileMetadata {
   name: string;
@@ -36,6 +38,7 @@ export default function AddProductPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [fileMetadata, setFileMetadata] = useState<FileMetadata | null>(null);
   const [errors, setErrors] = useState<FormError[]>([]);
+  const [displayPrice, setDisplayPrice] = useState(''); // State untuk harga dalam format Rupiah
 
   useEffect(() => {
     // Generate product ID on component mount
@@ -51,6 +54,23 @@ export default function AddProductPage() {
       }
     };
   }, [imagePreview]);
+
+  // Fungsi untuk format harga ke Rupiah
+  const formatToRupiah = (value: string): string => {
+    if (!value) return '';
+    const number = parseFloat(value.replace(/[^0-9]/g, ''));
+    if (isNaN(number)) return '';
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 2,
+    }).format(number);
+  };
+
+  // Fungsi untuk parsing input Rupiah ke angka
+  const parseRupiah = (value: string): string => {
+    return value.replace(/[^0-9]/g, '');
+  };
 
   const validateForm = (): boolean => {
     const newErrors: FormError[] = [];
@@ -109,8 +129,32 @@ export default function AddProductPage() {
         throw new Error(errorData.message || 'Failed to save product');
       }
 
-      alert('Produk berhasil ditambahkan!');
-      router.push('/dashboardowner/product');
+      // Notifikasi sukses dengan gaya kustom
+      toast.success(
+        <div className="flex items-center gap-2">
+          <span>Produk berhasil ditambahkan!</span>
+        </div>,
+        {
+          position: 'top-center',
+          autoClose: 4000, // Durasi 4 detik
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          theme: 'colored',
+          style: {
+            fontSize: '1.25rem', // Ukuran font lebih besar
+            padding: '16px', // Padding lebih besar
+            borderRadius: '8px', // Sudut lebih halus
+            backgroundColor: '#34D399', // Warna hijau untuk sukses
+            color: '#000000', // Teks hitam untuk kontras
+          },
+        }
+      );
+
+      setTimeout(() => {
+        router.push('/dashboardowner/product');
+      }, 1500); // Redirect setelah 1.5 detik
     } catch (error) {
       console.error('Error adding product:', error);
       setErrors([{ 
@@ -124,10 +168,20 @@ export default function AddProductPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    if (name === 'price') {
+      // Format harga ke Rupiah untuk tampilan
+      const rawValue = parseRupiah(value);
+      setFormData((prev) => ({
+        ...prev,
+        price: rawValue,
+      }));
+      setDisplayPrice(formatToRupiah(rawValue));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
     // Clear error for this field
     setErrors((prev) => prev.filter((error) => error.field !== name));
   };
@@ -224,13 +278,12 @@ export default function AddProductPage() {
             <div>
               <label className="block text-2xl text-white mb-3">Harga Produk</label>
               <input
-                type="number"
+                type="text"
                 name="price"
-                value={formData.price}
+                value={displayPrice}
                 onChange={handleInputChange}
                 className={`w-full px-4 py-3 rounded border border-white bg-transparent text-white placeholder-white placeholder-opacity-50 text-xl ${cousine.className} ${errors.some((e) => e.field === 'price') ? 'border-red-600' : ''}`}
-                placeholder="Masukkan harga"
-                step="0.01"
+                placeholder="Masukkan harga (Rp)"
                 required
               />
               {renderError('price')}
@@ -311,6 +364,7 @@ export default function AddProductPage() {
           </div>
         </form>
       </div>
+      <ToastContainer />
     </div>
   );
 }
