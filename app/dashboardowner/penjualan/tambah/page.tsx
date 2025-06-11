@@ -10,9 +10,9 @@ import 'react-toastify/dist/ReactToastify.css';
 export default function AddSalesPage() {
   const router = useRouter();
 
-  // Fungsi untuk memformat tanggal saat ini ke format DD/MM/YYYY berdasarkan 11:00 AM WIB, 11 Juni 2025
+  // Fungsi untuk memformat tanggal saat ini ke format DD/MM/YYYY berdasarkan 11:47 AM WIB, 11 Juni 2025
   const getCurrentDate = () => {
-    const now = new Date('2025-06-11T11:00:00+07:00'); // WIB
+    const now = new Date('2025-06-11T11:47:00+07:00'); // WIB
     return now.toLocaleDateString('id-ID', {
       day: '2-digit',
       month: '2-digit',
@@ -98,7 +98,8 @@ export default function AddSalesPage() {
         const productResponse = await fetch('/api/products');
         if (!productResponse.ok) throw new Error(`Gagal memuat produk: ${productResponse.status}`);
         const productsData = await productResponse.json();
-        setAvailableProducts(productsData.rows); // Akses rows
+        // Sesuaikan dengan struktur respons (array langsung dari postgres.js)
+        setAvailableProducts(Array.isArray(productsData) ? productsData : []);
 
         // Memuat pelanggan (role: user)
         const customerResponse = await fetch('/api/users?role=user');
@@ -628,23 +629,31 @@ export default function AddSalesPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {availableProducts.map((product: AvailableProduct, index: number) => (
-                      <tr key={index} className="border-t text-[#BC69A7]">
-                        <td className="p-2">{index + 1}</td>
-                        <td className="p-2">{product.name}</td>
-                        <td className="p-2">Rp{product.price.toLocaleString('id-ID')},00</td>
-                        <td className="p-2">
-                          <button
-                            type="button"
-                            onClick={(e) => handleAddProduct(e, product)}
-                            className="pilih-button bg-[#BC69A7] text-white px-3 py-1 rounded uppercase"
-                            aria-label={`Pilih produk ${product.name}`}
-                          >
-                            Pilih
-                          </button>
+                    {availableProducts.length > 0 ? (
+                      availableProducts.map((product: AvailableProduct, index: number) => (
+                        <tr key={index} className="border-t text-[#BC69A7]">
+                          <td className="p-2">{index + 1}</td>
+                          <td className="p-2">{product.name}</td>
+                          <td className="p-2">Rp{product.price.toLocaleString('id-ID')},00</td>
+                          <td className="p-2">
+                            <button
+                              type="button"
+                              onClick={(e) => handleAddProduct(e, product)}
+                              className="pilih-button bg-[#BC69A7] text-white px-3 py-1 rounded uppercase"
+                              aria-label={`Pilih produk ${product.name}`}
+                            >
+                              Pilih
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={4} className="p-4 text-center text-[#6A1E55] text-lg">
+                          Tidak ada produk tersedia
                         </td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
                 <div className="mb-4">

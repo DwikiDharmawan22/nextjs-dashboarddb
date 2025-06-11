@@ -1,7 +1,5 @@
-// definitions2.ts
 import { ComponentType } from 'react';
 
-// Customer
 export interface Customer {
   username: string;
   email: string;
@@ -15,16 +13,14 @@ export interface FormData {
   phone: string;
 }
 
-// Transaction
 export interface Transaction {
   id: string;
   date: string;
-  totalprice: number; // Diubah dari string ke number
+  totalprice: number;
   username: string;
   product: string;
 }
 
-// Add Transaction
 export interface Product {
   name: string;
   quantity: number;
@@ -49,12 +45,11 @@ export interface AvailableProduct {
   id?: string;
 }
 
-// Product
 export interface SaleProduct {
   id: string;
   image: string;
   name: string;
-  price: number; // Diubah dari string ke number
+  price: number;
 }
 
 export interface EditForm {
@@ -62,7 +57,6 @@ export interface EditForm {
   price: string;
 }
 
-// Dashboard
 export interface ChartData {
   labels: string[];
   datasets: {
@@ -73,13 +67,7 @@ export interface ChartData {
     borderWidth: number;
   }[];
 }
-interface Metrics {
-  numberOfCustomers?: number;
-  numberOfTransactions?: number;
-  totalRevenue?: number;
-}
 
-// Profile
 export interface Profile {
   name: string;
   role: string;
@@ -88,7 +76,6 @@ export interface Profile {
   facebook: string;
 }
 
-// Pelanggan
 export interface ProductPelanggan {
   name: string;
   imageSrc: string;
@@ -98,24 +85,20 @@ export interface ProductPelanggan {
   link: string;
 }
 
-// About
 export interface TeamMember {
   image: string;
   name: string;
   description: string;
 }
 
-// Shop
 export interface ShopProduct {
-  id : string;
+  id: string;
   image: string;
   name: string;
   width: number;
   height: number;
   link: string;
 }
-
-// Product Details
 
 export interface Product1 {
   image: string;
@@ -130,7 +113,6 @@ export interface Product1 {
   };
 }
 
-// Review
 export interface reviewProduct {
   image: string;
   name: string;
@@ -140,7 +122,6 @@ export interface reviewProduct {
   description: string;
 }
 
-// Blog
 export interface blogProduct {
   image: string;
   name: string;
@@ -148,33 +129,31 @@ export interface blogProduct {
   description: string;
 }
 
-// Contact
 export interface Contact {
   location: string;
   phone: string;
   website: string;
 }
 
-//login
 export interface LoginFormData {
   email: string;
   password: string;
   captchaInput: string;
 }
-//forgot pass
+
 export interface ForgotPasswordFormData {
   email: string;
   newPassword: string;
   confirmPassword: string;
 }
-//regis
+
 export interface RegisterFormData {
   username: string;
   email: string;
   nomorTelp: string;
   password: string;
   confirmPassword: string;
-  captcha?: string; // Optional, not used in form validation
+  captcha?: string;
 }
 
 export interface ErrorObject {

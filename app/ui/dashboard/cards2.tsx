@@ -49,7 +49,7 @@ export default function Cards({
         value: metrics.numberOfTransactions,
       },
       {
-        icon: <ArrowDownTrayIcon className="h-8 w-8" />, // Corrected from Arrow-courswenTrayIcon
+        icon: <ArrowDownTrayIcon className="h-8 w-8" />,
         iconColor: 'text-green-600',
         title: 'Pendapatan',
         value: metrics.totalRevenue
@@ -183,7 +183,7 @@ export default function Cards({
         <tbody>
           {[...Array(4)].map((_, index) => (
             <tr key={index} className="border-t text-[#6A1E55] animate-pulse">
-              {[...Array(5)].map((_, colIndex) => (
+              {[...Array(6)].map((_, colIndex) => (
                 <td key={colIndex} className="p-2">
                   <div className="h-6 w-24 bg-gray-300 rounded"></div>
                 </td>
@@ -198,7 +198,7 @@ export default function Cards({
       return (
         <tbody>
           <tr>
-            <td colSpan={5} className="p-4 text-center text-[#6A1E55]">
+            <td colSpan={6} className="p-4 text-center text-[#6A1E55]">
               Tidak ada transaksi
             </td>
           </tr>
@@ -210,17 +210,38 @@ export default function Cards({
       <tbody>
         {transactions.map((transaction) => (
           <tr key={transaction.id} className="border-t text-[#6A1E55]">
-            <td className="p-2">{transaction.id}</td>
-            <td className="p-2">{transaction.date}</td>
+            <td className="p-2">{transaction.id || 'N/A'}</td>
+            <td className="p-2">{transaction.date || 'N/A'}</td>
             <td className="p-2">
-              {new Intl.NumberFormat('id-ID', {
-                style: 'currency',
-                currency: 'IDR',
-                minimumFractionDigits: 0,
-              }).format(transaction.totalprice)}
+              {transaction.totalprice
+                ? new Intl.NumberFormat('id-ID', {
+                    style: 'currency',
+                    currency: 'IDR',
+                    minimumFractionDigits: 0,
+                  }).format(transaction.totalprice)
+                : 'N/A'}
             </td>
-            <td className="p-2">{transaction.username}</td>
-            <td className="p-2">{transaction.product}</td>
+            <td className="p-2">{transaction.username || 'N/A'}</td>
+            <td className="p-2">{transaction.product || 'N/A'}</td>
+            <td className="p-2">
+              <button
+                className={`bg-red-500 text-white font-bold px-3 py-1 rounded ${cousine.className}`}
+                onClick={() => {
+                  console.log('Delete button clicked for transaction:', {
+                    id: transaction.id,
+                    fullObject: transaction,
+                  });
+                  if (transaction.id && transaction.id.trim() !== '') {
+                    onDelete(transaction.id);
+                  } else {
+                    console.error('Transaction ID is undefined or invalid for transaction:', transaction);
+                    alert('Transaction ID is invalid. Please try again.');
+                  }
+                }}
+              >
+                Hapus
+              </button>
+            </td>
           </tr>
         ))}
       </tbody>

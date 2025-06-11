@@ -21,11 +21,17 @@ export default function Page() {
     const loadData = async () => {
       try {
         setIsLoading(true);
+        console.log('[loadData] Fetching transactions');
         const response = await fetch('/api/transactions');
+        if (!response.ok) {
+          throw new Error(`HTTP error ${response.status}`);
+        }
         const data = await response.json();
+        console.log(`[loadData] Fetched ${data.length} transactions`, data.map((t: Transaction) => t.id));
         setTransactions(data);
       } catch (error) {
-        console.error('Failed to load transactions:', error);
+        console.error('[loadData] Failed to load transactions:', error);
+        alert('Failed to load transactions. Please try again.');
       } finally {
         setIsLoading(false);
       }
@@ -38,11 +44,16 @@ export default function Page() {
       const loadData = async () => {
         try {
           setIsLoading(true);
+          console.log('[handleRouteChange] Refreshing transactions');
           const response = await fetch('/api/transactions');
+          if (!response.ok) {
+            throw new Error(`HTTP error ${response.status}`);
+          }
           const data = await response.json();
+          console.log(`[handleRouteChange] Refreshed ${data.length} transactions`, data.map((t: Transaction) => t.id));
           setTransactions(data);
         } catch (error) {
-          console.error('Failed to load transactions:', error);
+          console.error('[handleRouteChange] Failed to refresh transactions:', error);
         } finally {
           setIsLoading(false);
         }
@@ -55,9 +66,61 @@ export default function Page() {
     };
   }, []);
 
-  const filteredTransactions = transactions.filter((transaction) =>
-    transaction.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    transaction.product.toLowerCase().includes(searchQuery.toLowerCase())
+  const handleDelete = async (transactionId: string) => {
+    console.log(`[handleDelete] Received transaction ID: "${transactionId}" (type: ${typeof transactionId})`);
+    console.log(`[handleDelete] Sending DELETE request to: /api/transactions?id=${encodeURIComponent(transactionId)}`);
+    if (!confirm('Are you sure you want to delete this transaction?')) {
+      console.log('[handleDelete] Deletion cancelled by user');
+      return;
+    }
+
+    if (!transactionId || transactionId.trim() === '') {
+      console.error('[handleDelete] Invalid transaction ID:', transactionId);
+      alert('Transaction ID is invalid. Please try again.');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/transactions?id=${encodeURIComponent(transactionId)}`, {
+        method: 'DELETE',
+      });
+      const responseData = await response.json();
+      console.log(`[handleDelete] DELETE response:`, { status: response.status, data: responseData });
+
+      if (response.ok) {
+        const updatedTransactions = transactions.filter((t: Transaction) => t.id !== transactionId);
+        console.log(`[handleDelete] Updated transactions: ${updatedTransactions.length} remaining`);
+        setTransactions(updatedTransactions);
+
+        const filteredTransactions = updatedTransactions.filter(
+          (t: Transaction) =>
+            t.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            t.product.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+        const totalPages = Math.ceil(filteredTransactions.length / Number(entriesPerPage));
+        if (currentPage > totalPages && totalPages > 0) {
+          setCurrentPage(totalPages);
+        } else if (filteredTransactions.length === 0) {
+          setCurrentPage(1);
+        }
+        alert('Transaction deleted successfully');
+      } else {
+        console.error('[handleDelete] Failed to delete transaction:', responseData);
+        alert(`Failed to delete transaction: ${responseData.message || 'Unknown server error'}`);
+      }
+    } catch (error) {
+      console.error('[handleDelete] Error deleting transaction:', error);
+      alert('Failed to delete transaction due to network or server issue. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const filteredTransactions = transactions.filter(
+    (transaction: Transaction) =>
+      transaction.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      transaction.product.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const totalPages = Math.ceil(filteredTransactions.length / Number(entriesPerPage));
@@ -87,7 +150,7 @@ export default function Page() {
   }
 
   return (
-    <div className={`min-h-screen text-white p-4`} style={{ backgroundColor: '#6A1E55' }}>
+    <div className="min-h-screen text-white p-4" style={{ backgroundColor: '#6A1E55' }}>
       <div>
         <h1 className={`text-6xl text-white font-bold flex justify-center items-center ${creepster.className}`}>
           TRANSAKSI PENJUALAN
@@ -135,12 +198,14 @@ export default function Page() {
               <th className="p-4 text-left text-3xl text-[#6A1E55]">TOTAL HARGA</th>
               <th className="p-4 text-left text-3xl text-[#6A1E55]">USERNAME</th>
               <th className="p-4 text-left text-3xl text-[#6A1E55]">NAMA PRODUK</th>
+              <th className="p-4 text-left text-3xl text-[#6A1E55]">AKSI</th>
             </tr>
           </thead>
           <Cards
             type="transaction"
             transactions={paginatedTransactions}
             loading={isLoading}
+            onDelete={handleDelete}
           />
         </table>
       </div>

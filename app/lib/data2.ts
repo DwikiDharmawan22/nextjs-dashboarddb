@@ -15,6 +15,11 @@ import {
   Contact,
 } from '@/app/lib/definitions2';
 
+// Custom type for query result
+interface QueryResult {
+  rowCount?: number;
+}
+
 const sql = postgres({
   host: process.env.PGHOST,
   port: Number(process.env.PGPORT) || 5432,
@@ -24,7 +29,6 @@ const sql = postgres({
   ssl: { rejectUnauthorized: false },
 });
 
-// Existing functions (unchanged, included for completeness)
 export async function fetchCustomers(): Promise<Customer[]> {
   try {
     const data = await sql<Customer[]>`
@@ -65,10 +69,11 @@ export async function saveCustomers(customers: Customer[]): Promise<void> {
 export async function fetchTransactions(): Promise<Transaction[]> {
   try {
     const data = await sql<Transaction[]>`
-      SELECT id, date, totalPrice, username, product
+      SELECT id, date, totalPrice AS totalprice, username, product
       FROM transactions
       ORDER BY date DESC
     `;
+    console.log('[fetchTransactions] Fetched data:', data.map(t => ({ id: t.id, date: t.date, totalprice: t.totalprice })));
     return data;
   } catch (error) {
     console.error('Database Error:', error);
@@ -93,6 +98,41 @@ export async function saveTransaction(newTransaction: Transaction): Promise<void
   }
 }
 
+export async function deleteTransaction(id: string): Promise<void> {
+  try {
+    console.log('Attempting to delete transaction with ID:', id);
+    console.log('Database config:', {
+      host: process.env.PGHOST,
+      port: process.env.PGPORT,
+      database: process.env.PGDATABASE,
+      username: process.env.PGUSER,
+    });
+    const result = await sql`
+      DELETE FROM transactions
+      WHERE id = ${id}
+      RETURNING *
+    `;
+    if (result.length === 0) {
+      console.warn(`No transaction found with ID: ${id}`);
+      throw new Error('Transaction not found');
+    }
+    console.log('Transaction deleted with ID:', id);
+  } catch (error: any) {
+    console.error('Error deleting transaction with ID:', id, {
+      message: error.message,
+      stack: error.stack,
+      code: error.code,
+      detail: error.detail,
+      hint: error.hint,
+      severity: error.severity,
+    });
+    if (error.code && error.code.startsWith('08')) {
+      throw new Error('Failed to delete transaction due to network issue. Please try again.');
+    }
+    throw new Error('Failed to delete transaction due to server issue. Please try again.');
+  }
+}
+
 export async function fetchProducts(): Promise<SaleProduct[]> {
   try {
     const data = await sql<SaleProduct[]>`
@@ -100,7 +140,7 @@ export async function fetchProducts(): Promise<SaleProduct[]> {
       FROM products
       ORDER BY name ASC
     `;
-    return data; // Mengembalikan array langsung
+    return data;
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to fetch products.');
@@ -129,10 +169,13 @@ export async function saveProducts(products: SaleProduct[]): Promise<void> {
 
 export async function deleteProduct(id: string): Promise<void> {
   try {
-    await sql`
+    const result = await sql`
       DELETE FROM products
       WHERE id = ${id}
     `;
+    if (!result || result.length === 0) {
+      throw new Error('Product not found');
+    }
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to delete product.');
@@ -147,7 +190,7 @@ export async function fetchUsersByRole(role: string): Promise<{ username: string
       WHERE role = ${role}
       ORDER BY username ASC
     `;
-    return data; // Mengembalikan array langsung
+    return data;
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error(`Failed to fetch users with role ${role}.`);
@@ -174,7 +217,6 @@ export async function fetchDashboardData(
   setLoading: (loading: boolean) => void
 ): Promise<void> {
   try {
-    // Generate last 7 days
     const dailyData = await sql`
       SELECT 
         TO_CHAR(date, 'Day') AS day, 
@@ -200,7 +242,6 @@ export async function fetchDashboardData(
       }],
     });
 
-    // Generate last 12 months
     const monthlyData = await sql`
       SELECT 
         EXTRACT(MONTH FROM date) AS month_num,
