@@ -32,10 +32,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <div className="flex items-center gap-4 mb-2 md:mb-0">
                 <span className="font-semibold">Ikuti kami</span>
                 <div className="flex gap-3 text-xl">
-                  <FaFacebook />
-                  <FaPinterest />
-                  <FaWhatsapp />
-                  <FaInstagram />
+                  <a href="https://www.facebook.com/merryanti.edyanto.7" target="_blank" rel="noopener noreferrer">
+                    <FaFacebook />
+                  </a>
+                  <a href="https://www.pinterest.com/uajy" target="_blank" rel="noopener noreferrer">
+                    <FaPinterest />
+                  </a>
+                  <a href="https://wa.me/6282297527617" target="_blank" rel="noopener noreferrer">
+                    <FaWhatsapp />
+                  </a>
+                  <a href="https://www.instagram.com/uajy" target="_blank" rel="noopener noreferrer">
+                    <FaInstagram />
+                  </a>
                 </div>
               </div>
               <p>© 2025 Kemilau Topeng. All rights reserved</p>
