@@ -1,4 +1,3 @@
-// app/lib/data2.ts
 import postgres from 'postgres';
 import {
   Customer,
@@ -101,7 +100,7 @@ export async function fetchProducts(): Promise<SaleProduct[]> {
       FROM products
       ORDER BY name ASC
     `;
-    return data;
+    return data; // Mengembalikan array langsung
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to fetch products.');
@@ -137,6 +136,21 @@ export async function deleteProduct(id: string): Promise<void> {
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to delete product.');
+  }
+}
+
+export async function fetchUsersByRole(role: string): Promise<{ username: string }[]> {
+  try {
+    const data = await sql<{ username: string }[]>`
+      SELECT username
+      FROM users
+      WHERE role = ${role}
+      ORDER BY username ASC
+    `;
+    return data; // Mengembalikan array langsung
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error(`Failed to fetch users with role ${role}.`);
   }
 }
 
@@ -321,8 +335,6 @@ export async function fetchBlogProducts(): Promise<blogProduct[]> {
   }
 }
 
-// Updated fetchCardData to include totalOutcome
-// In data2.ts, if no expenses table
 export async function fetchCardData(): Promise<{
   numberOfCustomers: number;
   numberOfTransactions: number;
@@ -354,7 +366,6 @@ export async function fetchCardData(): Promise<{
   }
 }
 
-// New function: Fetch top product ordered today
 export async function fetchTopProductToday(): Promise<string> {
   try {
     const data = await sql`
@@ -421,11 +432,6 @@ export async function getContactData(): Promise<Contact> {
   return contactData;
 }
 
-// export const VALID_EMAIL = 'user123';
-// export const VALID_PASSWORD = '12345';
-// export const ADMIN_EMAIL = 'admin123';
-// export const ADMIN_PASSWORD = '12345';
-
 export const generateRandomCaptcha = (): string => {
   if (typeof window === 'undefined') return '';
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -436,16 +442,3 @@ export const generateCaptcha = (): string => {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   return Array.from({ length: 6 }, () => characters[Math.floor(Math.random() * characters.length)]).join('');
 };
-
-// export const calculatePasswordStrength = (
-//   password: string,
-//   setPasswordStrength: (strength: number) => void
-// ) => {
-//   let strength = 0;
-//   if (password.length >= 8) strength += 20;
-//   if (/[A-Z]/.test(password)) strength += 20;
-//   if (/[a-z]/.test(password)) strength += 20;
-//   if (/[0-9]/.test(password)) strength += 20;
-//   if (/[^A-Za-z0-9]/.test(password)) strength += 20;
-//   setPasswordStrength(Math.min(strength, 100));
-// };

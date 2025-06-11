@@ -10,9 +10,10 @@ import 'react-toastify/dist/ReactToastify.css';
 export default function AddSalesPage() {
   const router = useRouter();
 
-  // Fungsi untuk memformat tanggal saat ini ke format DD/MM/YYYY
+  // Fungsi untuk memformat tanggal saat ini ke format DD/MM/YYYY berdasarkan 11:00 AM WIB, 11 Juni 2025
   const getCurrentDate = () => {
-    return new Date().toLocaleDateString('id-ID', {
+    const now = new Date('2025-06-11T11:00:00+07:00'); // WIB
+    return now.toLocaleDateString('id-ID', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
@@ -21,7 +22,7 @@ export default function AddSalesPage() {
 
   const [formData, setFormData] = useState<FormData2>({
     date: getCurrentDate(),
-    cashier: 'Nama Pegawai',
+    cashier: 'Dwiki', // Default to first admin, can be adjusted
     customer: '',
     products: [],
     discount: 0,
@@ -36,6 +37,8 @@ export default function AddSalesPage() {
     subtotal: 0,
   });
   const [availableProducts, setAvailableProducts] = useState<AvailableProduct[]>([]);
+  const [customers, setCustomers] = useState<{ value: string; label: string }[]>([]);
+  const [admins, setAdmins] = useState<string[]>([]);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [isEditPopupOpen, setIsEditPopupOpen] = useState(false);
   const [editIndex, setEditIndex] = useState<number | null>(null);
@@ -43,20 +46,6 @@ export default function AddSalesPage() {
   const [formattedPayment, setFormattedPayment] = useState<string>('');
   const [formattedDiscount, setFormattedDiscount] = useState<string>('');
   const [quantityInput, setQuantityInput] = useState<string>('1');
-
-  // Daftar pelanggan untuk react-select
-  const customers = [
-    { value: 'Paijo', label: 'Paijo' },
-    { value: 'Budi', label: 'Budi' },
-    { value: 'Siti', label: 'Siti' },
-    { value: 'Rina', label: 'Rina' },
-    { value: 'Andi', label: 'Andi' },
-    { value: 'Dewi', label: 'Dewi' },
-    { value: 'Joko', label: 'Joko' },
-    { value: 'Lina', label: 'Lina' },
-    { value: 'Tono', label: 'Tono' },
-    { value: 'Mira', label: 'Mira' },
-  ];
 
   // Gaya kustom untuk react-select
   const customStyles = {
@@ -101,22 +90,36 @@ export default function AddSalesPage() {
     }),
   };
 
-  // Memuat produk dari API saat komponen dimuat
+  // Memuat produk dan pengguna dari API saat komponen dimuat
   useEffect(() => {
-    const loadProducts = async () => {
+    const loadData = async () => {
       try {
-        const response = await fetch('/api/products');
-        if (!response.ok) {
-          throw new Error(`Gagal memuat produk: ${response.status}`);
-        }
-        const data = await response.json();
-        setAvailableProducts(data);
+        // Memuat produk
+        const productResponse = await fetch('/api/products');
+        if (!productResponse.ok) throw new Error(`Gagal memuat produk: ${productResponse.status}`);
+        const productsData = await productResponse.json();
+        setAvailableProducts(productsData.rows); // Akses rows
+
+        // Memuat pelanggan (role: user)
+        const customerResponse = await fetch('/api/users?role=user');
+        if (!customerResponse.ok) throw new Error(`Gagal memuat pelanggan: ${customerResponse.status}`);
+        const customersData = await customerResponse.json();
+        setCustomers(customersData.map((user: { username: string }) => ({
+          value: user.username,
+          label: user.username,
+        })));
+
+        // Memuat pegawai/admin (role: admin)
+        const adminResponse = await fetch('/api/users?role=admin');
+        if (!adminResponse.ok) throw new Error(`Gagal memuat admin: ${adminResponse.status}`);
+        const adminsData = await adminResponse.json();
+        setAdmins(adminsData.map((user: { username: string }) => user.username));
       } catch (error) {
-        console.error('Failed to load products:', error);
-        alert('Gagal memuat produk. Periksa koneksi atau server.');
+        console.error('Failed to load data:', error);
+        alert('Gagal memuat data. Periksa koneksi atau server.');
       }
     };
-    loadProducts();
+    loadData();
   }, []);
 
   // Sinkronisasi totalPayment dan kembalian saat products, discount, atau paymentAmount berubah
@@ -124,7 +127,7 @@ export default function AddSalesPage() {
     setFormData((prev) => {
       const subtotal = prev.products.reduce((sum: number, p: Product) => sum + p.subtotal, 0);
       const newTotalPayment = subtotal - prev.discount >= 0 ? subtotal - prev.discount : 0;
-      const newChange = prev.paymentAmount - newTotalPayment; // Allow negative change
+      const newChange = prev.paymentAmount - newTotalPayment;
       return {
         ...prev,
         totalPayment: newTotalPayment,
@@ -241,7 +244,6 @@ export default function AddSalesPage() {
     const originalProduct = formData.products[editIndex];
     const updatedProduct = { ...selectedProduct, quantity, subtotal: selectedProduct.price * quantity };
 
-    // Check if any changes were made
     const isChanged =
       originalProduct.quantity !== updatedProduct.quantity ||
       originalProduct.subtotal !== updatedProduct.subtotal;
@@ -412,7 +414,7 @@ export default function AddSalesPage() {
     setFormattedDiscount('');
     setFormData({
       date: getCurrentDate(),
-      cashier: 'Nama Pegawai',
+      cashier: admins[0] || 'Dwiki', // Default to first admin if available
       customer: '',
       products: [],
       discount: 0,
@@ -446,7 +448,6 @@ export default function AddSalesPage() {
     setEditIndex(null);
   };
 
-  // Format kembalian untuk menangani nilai negatif
   const formatChange = (change: number) => {
     if (change >= 0) {
       return `Rp${change.toLocaleString('id-ID')},00`;
@@ -530,9 +531,10 @@ export default function AddSalesPage() {
                     className="px-4 py-2 rounded border border-white bg-[#A64D79] text-white text-lg custom-select"
                     aria-label="Pilih pegawai"
                   >
-                    <option value="Nama Pegawai" disabled>Nama Pegawai</option>
-                    <option value="Dwiki">Dwiki</option>
-                    <option value="Nana">Nana</option>
+                    <option value="" disabled>Pilih Pegawai</option>
+                    {admins.map((admin) => (
+                      <option key={admin} value={admin}>{admin}</option>
+                    ))}
                   </select>
                 </div>
               </div>
