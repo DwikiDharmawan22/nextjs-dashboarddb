@@ -14,6 +14,7 @@ const links = [
   { name: 'Review', href: '/dashboard/review' },
   { name: 'Blog', href: '/dashboard/blog' },
   { name: 'Contact', href: '/dashboard/contact' },
+  { name: 'Profile', href: '/dashboard/profile' },
 ];
 
 export default function NavLinks() {
