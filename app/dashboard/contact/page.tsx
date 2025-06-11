@@ -69,23 +69,6 @@ export default async function ContactPage() {
           </div>
         </div>
       </div>
-
-      <footer className="bg-white text-black text-sm mt-20 w-full">
-        <div className="px-6 py-3 mx-auto md:px-12">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center gap-4 mb-2 md:mb-0">
-              <span className="font-semibold">Ikuti kami</span>
-              <div className="flex gap-3 text-xl">
-                <FaFacebook />
-                <FaPinterest />
-                <FaWhatsapp />
-                <FaInstagram />
-              </div>
-            </div>
-            <p>© 2025 Kemilau Topeng. All rights reserved</p>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
