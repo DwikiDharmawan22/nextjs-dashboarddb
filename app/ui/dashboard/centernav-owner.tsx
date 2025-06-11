@@ -135,7 +135,7 @@ export default function CenterNavOwner() {
           onMouseEnter={() => isLoggedIn && setIsOpen(true)}
         >
           <Image
-            src="/dwiki.png"
+            src="/logo.png"
             alt="Profile"
             width={50}
             height={50}

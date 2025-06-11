@@ -36,7 +36,7 @@ export default function Page() {
       <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl relative mt-40">
         <div className="absolute -top-24 left-1/2 transform -translate-x-1/2">
           <Image
-            src="/dwiki.png"
+            src="/logo.png"
             alt="Profile"
             width={64}
             height={64}
