@@ -44,7 +44,7 @@ const LoginPage = () => {
     setIsClient(true);
   }, []);
 
-  const refreshCaptcha = useCallback(() => { // Perbaiki dari 'refresh captive'
+  const refreshCaptcha = useCallback(() => {
     setCaptcha(generateRandomCaptcha());
   }, []);
 
@@ -104,7 +104,14 @@ const LoginPage = () => {
 
       const data = await response.json();
       if (!response.ok) {
-        setErrors({ email: data.error });
+        // Set error based on specific API response
+        if (data.error === 'Email tidak terdaftar') {
+          setErrors({ email: data.error });
+        } else if (data.error === 'Password tidak sesuai') {
+          setErrors({ password: data.error });
+        } else {
+          setErrors({ email: data.error });
+        }
         if (loginAttempts > 0) {
           setLoginAttempts((prev) => Math.max(0, prev - 1));
           if (loginAttempts - 1 > 0) {
