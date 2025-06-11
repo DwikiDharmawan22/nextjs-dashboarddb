@@ -2,7 +2,7 @@
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { cousine } from '@/app/ui/fonts';
-import { ClipboardDocumentIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import { ClipboardDocumentIcon } from '@heroicons/react/24/outline';
 import { generateProductId } from '@/app/lib/generateProductId';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -38,16 +38,14 @@ export default function AddProductPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [fileMetadata, setFileMetadata] = useState<FileMetadata | null>(null);
   const [errors, setErrors] = useState<FormError[]>([]);
-  const [displayPrice, setDisplayPrice] = useState(''); // State untuk harga dalam format Rupiah
+  const [displayPrice, setDisplayPrice] = useState('');
 
   useEffect(() => {
-    // Generate product ID on component mount
     setFormData((prev) => ({
       ...prev,
       id: generateProductId(),
     }));
 
-    // Cleanup image preview URL on unmount
     return () => {
       if (imagePreview) {
         URL.revokeObjectURL(imagePreview);
@@ -55,45 +53,78 @@ export default function AddProductPage() {
     };
   }, [imagePreview]);
 
-  // Fungsi untuk format harga ke Rupiah
   const formatToRupiah = (value: string): string => {
     if (!value) return '';
-    const number = parseFloat(value.replace(/[^0-9]/g, ''));
+    const cleanValue = value.replace(/[^0-9]/g, '');
+    if (!cleanValue) return '';
+    const number = parseInt(cleanValue);
     if (isNaN(number)) return '';
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
       currency: 'IDR',
-      minimumFractionDigits: 2,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(number);
   };
 
-  // Fungsi untuk parsing input Rupiah ke angka
   const parseRupiah = (value: string): string => {
     return value.replace(/[^0-9]/g, '');
   };
 
+  const showErrorToast = (message: string) => {
+    toast.error(message, {
+      position: 'top-center',
+      autoClose: 3000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      theme: 'colored',
+      style: {
+        fontSize: '1.25rem',
+        padding: '16px',
+        borderRadius: '8px',
+      },
+    });
+  };
+
   const validateForm = (): boolean => {
     const newErrors: FormError[] = [];
-    
+
     if (!formData.name.trim()) {
-      newErrors.push({ field: 'name', message: 'Nama produk wajib diisi' });
+      newErrors.push({ field: 'name', message: 'Nama produk harus diisi' });
+    } else if (formData.name.length > 100) {
+      newErrors.push({ field: 'name', message: 'Nama produk maksimal 100 karakter' });
     }
-    
-    if (!formData.price || isNaN(parseFloat(formData.price)) || parseFloat(formData.price) <= 0) {
-      newErrors.push({ field: 'price', message: 'Harga harus berupa angka positif' });
+
+    if (!formData.price) {
+      newErrors.push({ field: 'price', message: 'Harga produk harus diisi' });
+    } else {
+      const priceNum = parseFloat(formData.price);
+      if (isNaN(priceNum) || priceNum <= 0) {
+        newErrors.push({ field: 'price', message: 'Harga harus berupa angka positif' });
+      } else if (priceNum > 1000000000) {
+        newErrors.push({ field: 'price', message: 'Harga maksimal Rp 1.000.000.000' });
+      }
     }
-    
+
     if (!formData.image) {
-      newErrors.push({ field: 'image', message: 'Gambar produk wajib diunggah' });
+      newErrors.push({ field: 'image', message: 'Gambar produk harus diunggah' });
     }
 
     setErrors(newErrors);
-    return newErrors.length === 0;
+
+    if (newErrors.length > 0) {
+      newErrors.forEach((error) => showErrorToast(error.message));
+      return false;
+    }
+
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -126,41 +157,32 @@ export default function AddProductPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to save product');
+        throw new Error(errorData.message || 'Gagal menyimpan produk');
       }
 
-      // Notifikasi sukses dengan gaya kustom
-      toast.success(
-        <div className="flex items-center gap-2">
-          <span>Produk berhasil ditambahkan!</span>
-        </div>,
-        {
-          position: 'top-center',
-          autoClose: 4000, // Durasi 4 detik
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          theme: 'colored',
-          style: {
-            fontSize: '1.25rem', // Ukuran font lebih besar
-            padding: '16px', // Padding lebih besar
-            borderRadius: '8px', // Sudut lebih halus
-            backgroundColor: '#34D399', // Warna hijau untuk sukses
-            color: '#000000', // Teks hitam untuk kontras
-          },
-        }
-      );
+      toast.success('Produk berhasil ditambahkan!', {
+        position: 'top-center',
+        autoClose: 2000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: 'colored',
+        style: {
+          fontSize: '1.25rem',
+          padding: '16px',
+          borderRadius: '8px',
+          backgroundColor: '#34D399',
+          color: '#000000',
+        },
+      });
 
       setTimeout(() => {
         router.push('/dashboardowner/product');
-      }, 1500); // Redirect setelah 1.5 detik
+      }, 1500);
     } catch (error) {
       console.error('Error adding product:', error);
-      setErrors([{ 
-        field: 'general', 
-        message: error instanceof Error ? error.message : 'Gagal menambahkan produk. Silakan coba lagi.'
-      }]);
+      showErrorToast(error instanceof Error ? error.message : 'Gagal menambahkan produk');
     } finally {
       setIsSubmitting(false);
     }
@@ -168,8 +190,8 @@ export default function AddProductPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+
     if (name === 'price') {
-      // Format harga ke Rupiah untuk tampilan
       const rawValue = parseRupiah(value);
       setFormData((prev) => ({
         ...prev,
@@ -182,60 +204,61 @@ export default function AddProductPage() {
         [name]: value,
       }));
     }
-    // Clear error for this field
+
     setErrors((prev) => prev.filter((error) => error.field !== name));
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files ? e.target.files[0] : null;
-    if (file) {
-      const validTypes = ['image/png', 'image/jpeg'];
-      const maxSize = 7 * 1024 * 1024; // 7MB
-      
-      if (!validTypes.includes(file.type)) {
-        setErrors([{ field: 'image', message: 'Hanya file PNG atau JPG yang diperbolehkan!' }]);
-        return;
-      }
-      
-      if (file.size > maxSize) {
-        setErrors([{ field: 'image', message: 'Ukuran file melebihi batas 7MB!' }]);
-        return;
-      }
-
-      setFormData((prev) => ({
-        ...prev,
-        image: file,
-      }));
-      
-      const previewUrl = URL.createObjectURL(file);
-      setImagePreview(previewUrl);
-      
-      const sizeInMB = (file.size / (1024 * 1024)).toFixed(1) + 'MB';
-      const lastModified = new Date(file.lastModified).toLocaleString('en-GB', { 
-        dateStyle: 'short', 
-        timeStyle: 'short' 
-      });
-      
-      setFileMetadata({
-        name: file.name,
-        size: sizeInMB,
-        type: file.type.split('/')[1].toUpperCase(),
-        lastModified: lastModified,
-      });
-      
-      setErrors((prev) => prev.filter((error) => error.field !== 'image'));
-    } else {
+    if (!file) {
+      showErrorToast('Gambar produk harus diunggah');
+      setErrors([{ field: 'image', message: 'Gambar produk harus diunggah' }]);
       setImagePreview(null);
       setFileMetadata(null);
-      setErrors((prev) => prev.filter((error) => error.field !== 'image'));
+      return;
     }
-  };
 
-  const renderError = (field: string) => {
-    const error = errors.find((e) => e.field === field);
-    return error ? (
-      <p className="text-red-300 text-sm mt-1">{error.message}</p>
-    ) : null;
+    const validTypes = ['image/png', 'image/jpeg'];
+    const maxSize = 7 * 1024 * 1024; // 7MB
+
+    if (!validTypes.includes(file.type)) {
+      showErrorToast('Hanya file PNG atau JPG yang diperbolehkan');
+      setErrors([{ field: 'image', message: 'Hanya file PNG atau JPG yang diperbolehkan' }]);
+      setImagePreview(null);
+      setFileMetadata(null);
+      return;
+    }
+
+    if (file.size > maxSize) {
+      showErrorToast('Ukuran file maksimal 7MB');
+      setErrors([{ field: 'image', message: 'Ukuran file maksimal 7MB' }]);
+      setImagePreview(null);
+      setFileMetadata(null);
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      image: file,
+    }));
+
+    const previewUrl = URL.createObjectURL(file);
+    setImagePreview(previewUrl);
+
+    const sizeInMB = (file.size / (1024 * 1024)).toFixed(1) + 'MB';
+    const lastModified = new Date(file.lastModified).toLocaleString('id-ID', {
+      dateStyle: 'short',
+      timeStyle: 'short',
+    });
+
+    setFileMetadata({
+      name: file.name,
+      size: sizeInMB,
+      type: file.type.split('/')[1].toUpperCase(),
+      lastModified: lastModified,
+    });
+
+    setErrors((prev) => prev.filter((error) => error.field !== 'image'));
   };
 
   return (
@@ -245,11 +268,6 @@ export default function AddProductPage() {
       </h1>
       <div className="bg-[#A64D79] p-12 rounded-lg max-w-8xl mx-auto">
         <h2 className="text-4xl text-white mb-8">Detail Produk</h2>
-        {errors.some((e) => e.field === 'general') && (
-          <div className="bg-red-600/20 border border-red-600 text-white p-4 rounded-lg mb-6">
-            {errors.find((e) => e.field === 'general')?.message}
-          </div>
-        )}
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-3 gap-6 mb-8">
             <div>
@@ -262,8 +280,8 @@ export default function AddProductPage() {
                 className={`w-full px-4 py-3 rounded border border-white bg-transparent text-white placeholder-white placeholder-opacity-50 text-xl ${cousine.className} ${errors.some((e) => e.field === 'name') ? 'border-red-600' : ''}`}
                 placeholder="Masukkan nama produk"
                 required
+                maxLength={100}
               />
-              {renderError('name')}
             </div>
             <div>
               <label className="block text-2xl text-white mb-3">ID Produk</label>
@@ -286,11 +304,10 @@ export default function AddProductPage() {
                 placeholder="Masukkan harga (Rp)"
                 required
               />
-              {renderError('price')}
             </div>
           </div>
           <div className="mb-8">
-            <label className="block text-2xl text-white mb-3">Image</label>
+            <label className="block text-2xl text-white mb-3">Gambar Produk</label>
             <div className={`border border-white rounded-lg p-8 text-center ${errors.some((e) => e.field === 'image') ? 'border-red-600' : ''}`}>
               <input
                 type="file"
@@ -313,10 +330,10 @@ export default function AddProductPage() {
                       <table className="text-white text-sm border-collapse">
                         <thead>
                           <tr>
-                            <th className="pr-4">Name</th>
-                            <th className="pr-4">Last modified</th>
-                            <th className="pr-4">Size</th>
-                            <th>Type</th>
+                            <th className="pr-4">Nama</th>
+                            <th className="pr-4">Terakhir Diubah</th>
+                            <th className="pr-4">Ukuran</th>
+                            <th>Tipe</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -342,8 +359,7 @@ export default function AddProductPage() {
                 )}
               </label>
             </div>
-            <p className="text-white text-lg mt-3">PNG, JPG, batas 7MB</p>
-            {renderError('image')}
+            <p className="text-white text-lg mt-3">PNG, JPG, maksimal 7MB</p>
           </div>
           <div className="flex gap-6 justify-between">
             <button
