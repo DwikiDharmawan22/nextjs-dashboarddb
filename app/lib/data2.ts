@@ -29,6 +29,46 @@ const sql = postgres({
   ssl: { rejectUnauthorized: false },
 });
 
+// Sync a single product from products to shop_products
+async function syncProductToShopProduct(product: SaleProduct): Promise<void> {
+  try {
+    const defaultWidth = 300;
+    const defaultHeight = 300;
+    const link = `/shop/product/${product.id}`;
+
+    // Sisipkan atau perbarui berdasarkan id
+    await sql`
+      INSERT INTO shop_products (id, image, name, width, height, link)
+      VALUES (${product.id}, ${product.image}, ${product.name}, ${defaultWidth}, ${defaultHeight}, ${link})
+      ON CONFLICT (id) DO UPDATE
+      SET image = EXCLUDED.image,
+          name = EXCLUDED.name,
+          width = EXCLUDED.width,
+          height = EXCLUDED.height,
+          link = EXCLUDED.link
+    `;
+  } catch (error) {
+    console.error('Database Error syncing product to shop_products:', error);
+    throw new Error(`Failed to sync product ${product.id} to shop_products.`);
+  }
+}
+
+// Sync all products to shop_products
+export async function syncAllProductsToShopProducts(): Promise<void> {
+  try {
+    const products = await fetchProducts();
+    await sql.begin(async (sql) => {
+      for (const product of products) {
+        await syncProductToShopProduct(product);
+      }
+    });
+    console.log('All products synced to shop_products successfully.');
+  } catch (error) {
+    console.error('Database Error syncing all products:', error);
+    throw new Error('Failed to sync all products to shop_products.');
+  }
+}
+
 export async function fetchCustomers(): Promise<Customer[]> {
   try {
     const data = await sql<Customer[]>`
@@ -159,6 +199,7 @@ export async function saveProducts(products: SaleProduct[]): Promise<void> {
               name = EXCLUDED.name,
               price = EXCLUDED.price
         `;
+        await syncProductToShopProduct(product);
       }
     });
   } catch (error) {
@@ -169,13 +210,24 @@ export async function saveProducts(products: SaleProduct[]): Promise<void> {
 
 export async function deleteProduct(id: string): Promise<void> {
   try {
-    const result = await sql`
-      DELETE FROM products
-      WHERE id = ${id}
-    `;
-    if (!result || result.length === 0) {
-      throw new Error('Product not found');
-    }
+    await sql.begin(async (sql) => {
+      const productResult = await sql`
+        DELETE FROM products
+        WHERE id = ${id}
+        RETURNING *
+      `;
+      if (!productResult || productResult.length === 0) {
+        throw new Error('Product not found in products table');
+      }
+      const shopProductResult = await sql`
+        DELETE FROM shop_products
+        WHERE id = ${id}
+        RETURNING *
+      `;
+      if (!shopProductResult || shopProductResult.length === 0) {
+        console.warn(`No shop product found with ID: ${id}`);
+      }
+    });
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to delete product.');
@@ -319,7 +371,7 @@ export async function fetchTeamMembers(): Promise<TeamMember[]> {
 export async function fetchShopProducts(): Promise<ShopProduct[]> {
   try {
     const data = await sql<ShopProduct[]>`
-      SELECT image, name, width, height, link
+      SELECT id, image, name, width, height, link
       FROM shop_products
       ORDER BY name ASC
     `;
