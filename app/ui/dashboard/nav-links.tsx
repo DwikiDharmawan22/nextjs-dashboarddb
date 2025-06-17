@@ -5,7 +5,6 @@ import clsx from 'clsx';
 import { irishGrover } from '@/app/ui/fonts';
 import { toast } from 'react-toastify';
 import { useAuth } from '@/app/lib/auth-context';
-import { useEffect, useState } from 'react';
 
 const links = [
   { name: 'Home', href: '/dashboard' },
@@ -22,26 +21,9 @@ export default function NavLinks() {
   const pathname = usePathname();
   const router = useRouter();
   const { isLoggedIn, logout } = useAuth();
-  const [totalProducts, setTotalProducts] = useState<number>(0);
 
   // Nonaktifkan navigasi di halaman autentikasi
   const isAuthPage = ['/auth/login', '/auth/register', '/auth/forgot-password'].includes(pathname);
-
-  // Ambil jumlah total produk dari API
-  useEffect(() => {
-    async function fetchTotalProducts() {
-      try {
-        const response = await fetch('/api/product-count');
-        if (response.ok) {
-          const data = await response.json();
-          setTotalProducts(data.total || 0);
-        }
-      } catch (err) {
-        console.error('Error fetching total products:', err);
-      }
-    }
-    fetchTotalProducts();
-  }, []);
 
   const handleProductClick = () => {
     if (isAuthPage || !isLoggedIn) {
@@ -53,15 +35,9 @@ export default function NavLinks() {
       return;
     }
 
-    if (totalProducts > 0) {
-      const randomId = Math.floor(Math.random() * totalProducts) + 1; // ID mulai dari 1
-      router.push(`/dashboard/product/${randomId}`);
-    } else {
-      toast.error('Tidak ada produk yang tersedia', {
-        theme: 'dark',
-        position: 'top-right',
-      });
-    }
+    const productPages = ['/dashboard/product', '/dashboard/product/product2', '/dashboard/product/product3'];
+    const randomPage = productPages[Math.floor(Math.random() * productPages.length)];
+    router.push(randomPage);
   };
 
   const handleLinkClick = (href: string) => {

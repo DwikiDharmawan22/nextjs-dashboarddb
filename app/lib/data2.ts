@@ -20,7 +20,7 @@ interface QueryResult {
   rowCount?: number;
 }
 
-export const sql = postgres({
+const sql = postgres({
   host: process.env.PGHOST,
   port: Number(process.env.PGPORT) || 5432,
   database: process.env.PGDATABASE,
@@ -406,6 +406,7 @@ export async function fetchShopProducts(): Promise<ShopProduct[]> {
 }
 
 export async function fetchProductById(id: string): Promise<Product1> {
+  console.log('Fetching product with ID:', id); // Add this log
   try {
     const data = await sql<Product1[]>`
       SELECT id, image, name, description, materials, price, rating, navigation
