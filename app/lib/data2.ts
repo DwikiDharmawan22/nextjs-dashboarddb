@@ -20,7 +20,7 @@ interface QueryResult {
   rowCount?: number;
 }
 
-const sql = postgres({
+export const sql = postgres({
   host: process.env.PGHOST,
   port: Number(process.env.PGPORT) || 5432,
   database: process.env.PGDATABASE,
