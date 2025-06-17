@@ -5,10 +5,19 @@
 // };
 
 // export default nextConfig;
+// /** @type {import('next').NextConfig} */
+// const nextConfig = {
+//   experimental: {
+//     serverComponentsExternalPackages: ['postgres'], // Tambahkan postgres
+//   },
+// };
+
+// module.exports = nextConfig;
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    serverComponentsExternalPackages: ['postgres'], // Tambahkan postgres
+    serverExternalPackages: ['postgres'], // Tambahkan postgres
   },
 };
 
