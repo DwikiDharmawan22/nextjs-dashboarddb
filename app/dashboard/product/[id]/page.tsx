@@ -36,7 +36,7 @@ export default function Page({ params }: { params: { id: string } }) {
         const countResponse = await fetch('/api/product-count');
         if (countResponse.ok) {
           const countData = await countResponse.json();
-          setTotalProducts(countData.total);
+          setTotalProducts(countData.total || 0); // Tambahkan default value 0
         }
       } catch (err) {
         console.error('Fetch Error:', err);
