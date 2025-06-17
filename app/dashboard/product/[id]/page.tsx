@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { creepster } from '@/app/ui/fonts';
 import StaticRating from '@/components/StaticRating';
 import { CubeIcon, StarIcon, PaintBrushIcon } from '@heroicons/react/24/solid';
+import type { NextPage } from 'next';
 
 // Map nama material ke ikon di sisi klien
 const iconMap: { [key: string]: React.ComponentType<any> } = {
@@ -14,7 +15,7 @@ const iconMap: { [key: string]: React.ComponentType<any> } = {
   'highly pigmented natural paint': PaintBrushIcon,
 };
 
-export default function Page({ params }: { params: { id: string } }) {
+const Page: NextPage<{ params: { id: string } }> = ({ params }) => {
   const [product, setProduct] = useState<Product1 | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [totalProducts, setTotalProducts] = useState<number>(0);
@@ -24,7 +25,7 @@ export default function Page({ params }: { params: { id: string } }) {
       try {
         const response = await fetch(`/api/product?id=${params.id}`);
         if (!response.ok) {
-          throw new Error('Gagal memuat produk');
+          throw new Error(`Gagal memuat produk dengan ID ${params.id}`);
         }
         const data = await response.json();
         data.materials = data.materials.map((material: { name: string }) => ({
@@ -36,7 +37,7 @@ export default function Page({ params }: { params: { id: string } }) {
         const countResponse = await fetch('/api/product-count');
         if (countResponse.ok) {
           const countData = await countResponse.json();
-          setTotalProducts(countData.total || 0); // Tambahkan default value 0
+          setTotalProducts(countData.total || 0);
         } else {
           setTotalProducts(0); // Default jika API gagal
         }
@@ -113,4 +114,6 @@ export default function Page({ params }: { params: { id: string } }) {
       </div>
     </div>
   );
-}
+};
+
+export default Page;
