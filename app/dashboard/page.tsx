@@ -1,11 +1,11 @@
 import Image from "next/image";
 import { creepster, irishGrover } from "@/app/ui/fonts";
-import { fetchProducts } from "@/app/lib/data2";
+import { fetchTopProductsByTransactions } from "@/app/lib/data2"; // Perbarui impor
 import { ProductPelanggan } from "@/app/lib/definitions2";
 import { ProductCard, ShopNowButton } from "@/app/ui/dashboard/productcards"; // Import the new components
 
 export default async function HomePage() {
-  const fetchedProducts = await fetchProducts();
+  const fetchedProducts = await fetchTopProductsByTransactions(); // Gunakan fungsi baru
 
   const products: ProductPelanggan[] = fetchedProducts.map((product) => ({
     name: product.name,
@@ -32,7 +32,6 @@ export default async function HomePage() {
           </p>
           
           <p className={`${creepster.className} text-lg md:text-xl text-[#FFFF] font-semibold`}>
-
             NEW ARRIVALS
           </p>
           <ShopNowButton /> {/* Use the Client Component */}

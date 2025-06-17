@@ -186,6 +186,29 @@ export async function fetchProducts(): Promise<SaleProduct[]> {
     throw new Error('Failed to fetch products.');
   }
 }
+export async function fetchTopProductsByTransactions(): Promise<SaleProduct[]> {
+  try {
+    const data = await sql<SaleProduct[]>`
+      SELECT p.id, p.image, p.name, p.price
+      FROM products p
+      JOIN (
+        SELECT 
+          SPLIT_PART(product, ' - ', 1) as product_name, 
+          COUNT(*) as transaction_count
+        FROM transactions
+        WHERE product IS NOT NULL
+        GROUP BY SPLIT_PART(product, ' - ', 1)
+        ORDER BY transaction_count DESC
+        LIMIT 3
+      ) t ON p.name = t.product_name
+      ORDER BY t.transaction_count DESC
+    `;
+    return data;
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch top products by transactions.');
+  }
+}
 
 export async function saveProducts(products: SaleProduct[]): Promise<void> {
   try {
