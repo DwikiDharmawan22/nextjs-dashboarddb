@@ -1,60 +1,37 @@
-'use client';
-
-import { useEffect, useState } from 'react';
 import { Product1 } from '@/app/lib/definitions2';
 import Image from 'next/image';
 import { creepster } from '@/app/ui/fonts';
 import StaticRating from '@/components/StaticRating';
 import { CubeIcon, StarIcon, PaintBrushIcon } from '@heroicons/react/24/solid';
 
-// Map nama material ke ikon di sisi klien
+// Map nama material ke ikon di sisi server
 const iconMap: { [key: string]: React.ComponentType<any> } = {
   'selected mahogany wood': CubeIcon,
   'dumling paper': StarIcon,
   'highly pigmented natural paint': PaintBrushIcon,
 };
 
-export default function Page({ params }: { params: { id: string } }) {
-  const [product, setProduct] = useState<Product1 | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [totalProducts, setTotalProducts] = useState<number>(0);
+async function getProduct(id: string) {
+  const res = await fetch(`http://localhost:3000/api/product?id=${id}`, { cache: 'no-store' });
+  if (!res.ok) throw new Error('Gagal memuat produk');
+  const data = await res.json();
+  data.materials = data.materials.map((material: { name: string }) => ({
+    ...material,
+    icon: iconMap[material.name.toLowerCase()],
+  }));
+  return data as Product1;
+}
 
-  useEffect(() => {
-    async function fetchProduct() {
-      try {
-        const response = await fetch(`/api/product?id=${params.id}`);
-        if (!response.ok) {
-          throw new Error('Gagal memuat produk');
-        }
-        const data = await response.json();
-        data.materials = data.materials.map((material: { name: string }) => ({
-          ...material,
-          icon: iconMap[material.name.toLowerCase()],
-        }));
-        setProduct(data);
+async function getTotalProducts() {
+  const res = await fetch('http://localhost:3000/api/product-count', { cache: 'no-store' });
+  if (!res.ok) return 0;
+  const data = await res.json();
+  return data.total || 0;
+}
 
-        const countResponse = await fetch('/api/product-count');
-        if (countResponse.ok) {
-          const countData = await countResponse.json();
-          setTotalProducts(countData.total || 0);
-        } else {
-          setTotalProducts(0);
-        }
-      } catch (err) {
-        console.error('Fetch Error:', err);
-        setError('Gagal memuat produk. Silakan coba lagi.');
-      }
-    }
-    fetchProduct();
-  }, [params.id]);
-
-  if (error) {
-    return <div className="text-red-500 text-center">{error}</div>;
-  }
-
-  if (!product) {
-    return <div className="text-white text-center">Memuat...</div>;
-  }
+export default async function Page({ params }: { params: { id: string } }) {
+  const product = await getProduct(params.id);
+  const totalProducts = await getTotalProducts();
 
   const currentId = parseInt(params.id);
   const prevId = currentId > 1 ? currentId - 1 : totalProducts;
