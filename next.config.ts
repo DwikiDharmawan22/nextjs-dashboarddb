@@ -14,11 +14,14 @@
 
 // module.exports = nextConfig;
 
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  experimental: {
-    serverExternalPackages: ['postgres'], // Tambahkan postgres
-  },
-};
+// /** @type {import('next').NextConfig} */
+// const nextConfig = {
+//   experimental: {
+//     serverExternalPackages: ['postgres'], // Tambahkan postgres
+//   },
+// };
+
+// module.exports = nextConfig;
+const nextConfig = {};
 
 module.exports = nextConfig;

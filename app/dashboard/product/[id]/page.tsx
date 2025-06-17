@@ -6,7 +6,6 @@ import Image from 'next/image';
 import { creepster } from '@/app/ui/fonts';
 import StaticRating from '@/components/StaticRating';
 import { CubeIcon, StarIcon, PaintBrushIcon } from '@heroicons/react/24/solid';
-import type { NextPage } from 'next';
 
 // Map nama material ke ikon di sisi klien
 const iconMap: { [key: string]: React.ComponentType<any> } = {
@@ -15,7 +14,7 @@ const iconMap: { [key: string]: React.ComponentType<any> } = {
   'highly pigmented natural paint': PaintBrushIcon,
 };
 
-const Page: NextPage<{ params: { id: string } }> = ({ params }) => {
+export default function Page({ params }: { params: { id: string } }) {
   const [product, setProduct] = useState<Product1 | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [totalProducts, setTotalProducts] = useState<number>(0);
@@ -25,7 +24,7 @@ const Page: NextPage<{ params: { id: string } }> = ({ params }) => {
       try {
         const response = await fetch(`/api/product?id=${params.id}`);
         if (!response.ok) {
-          throw new Error(`Gagal memuat produk dengan ID ${params.id}`);
+          throw new Error('Gagal memuat produk');
         }
         const data = await response.json();
         data.materials = data.materials.map((material: { name: string }) => ({
@@ -39,7 +38,7 @@ const Page: NextPage<{ params: { id: string } }> = ({ params }) => {
           const countData = await countResponse.json();
           setTotalProducts(countData.total || 0);
         } else {
-          setTotalProducts(0); // Default jika API gagal
+          setTotalProducts(0);
         }
       } catch (err) {
         console.error('Fetch Error:', err);
@@ -114,6 +113,4 @@ const Page: NextPage<{ params: { id: string } }> = ({ params }) => {
       </div>
     </div>
   );
-};
-
-export default Page;
+}
